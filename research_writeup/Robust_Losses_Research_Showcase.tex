@@ -1,0 +1,349 @@
+% !TEX program = pdflatex
+% Robust classification losses: theory, implementation, and research roadmap
+% Compile: pdflatex Robust_Losses_Research_Showcase.tex (twice for references)
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black}
+
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\one}{\mathbf{1}}
+
+\title{\textbf{Robust Loss Functions for Neural Classification under Label Noise:}\\
+Theory, Implementation, Experiments, and Research Roadmap\\
+\textit{(Progress report \& showcase)}}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document synthesizes the \textbf{mathematical foundations}, \textbf{literature provenance}, and \textbf{software realization} of a suite of classification losses used in our robust deep-learning experiments: categorical cross-entropy (CCE), mean-absolute-error on class probabilities (MAE), generalized cross-entropy (GCE) with exponent $q$, truncated GCE, symmetric cross-entropy (SCE), an S-divergence--style surrogate loss (SDIV), and forward loss correction with a noise transition matrix (oracle or estimated). We explain how these objectives connect to our broader research programme on $\beta$-divergences, S-divergences, and rSDNet-style robust learning; we map each loss to the PyTorch implementations in \texttt{part3\_BERT\_Robust\_NLP\_Experiments.py} and \texttt{part4\_Multimodal\_Vision\_Robust\_Experiments.py}; and we outline \textbf{extendable future work} suitable for iterative (e.g.\ weekly) development. Static 2D/3D diagnostic plots are described; interactive 3D extensions via \texttt{plotly} are indicated where appropriate.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Research programme and alignment with the proposal}
+%==============================================================================
+
+Our overarching goal (see internal notes on rRNet/rSDNet and Ghosh--Jana manuscripts) is to replace \textbf{fragile} training objectives (KL / cross-entropy in classification, MSE in regression) with \textbf{bounded-influence} or \textbf{down-weighting} divergences that automatically limit the impact of contaminated labels or outliers. In \textbf{regression}, the $\beta$-divergence (density power divergence) provides a principled bridge between MLE and robust estimation with provable breakdown properties \cite{ghosh2017janaarxiv}. In \textbf{classification under label noise}, complementary tools from the deep-learning literature---\textbf{GCE}, \textbf{SCE}, and \textbf{forward correction}---implement analogous ``soft robustness'' without requiring explicit outlier identification.
+
+\paragraph{Are we on the right track?}
+\textbf{Yes, at two levels:}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Conceptual alignment:} Noise-robust classification losses (GCE, SCE, MAE-on-probabilities) and S-divergence surrogates (SDIV) mirror the same design principle as $\beta$- and S-divergences in statistics: \emph{reweight or bound} the contribution of suspicious samples.
+  \item \textbf{Empirical alignment:} Our batteries (clean baseline; uniform noise; class-conditional noise; $q$-sweeps for GCE) reproduce standard evaluation protocols from the noisy-label literature \cite{zhang2018gce,wang2019sce,patrini2017}, extended to \textbf{NLP} (mental health / medical text) and \textbf{vision / multimodal} medical benchmarks (MedMNIST; CLIP-style prompts) in recent code modules.
+\end{enumerate}
+
+\paragraph{Novelty in our implementation pipeline.}
+The individual losses are \textbf{not new}; novelty lies in (i) a \textbf{unified, reproducible harness} across modalities, (ii) coupling with \textbf{oracle and estimated} transition matrices, (iii) systematic \textbf{$q$-sensitivity} and \textbf{noise-rate} surfaces, and (iv) explicit linkage to the \textbf{S-divergence / rSDNet} research line via SDIV.
+
+%==============================================================================
+\section{Mathematical setup}
+%==============================================================================
+
+Let $\mathbf{z} \in \mathbb{R}^C$ denote logits and $\mathbf{p} = \softmax(\mathbf{z})$ the predicted class probabilities. For a sample with \emph{observed} label $y \in \{1,\ldots,C\}$ (one-hot $\mathbf{e}_y$), define $p_y = p_{y}$ as the predicted mass on that label.
+
+\paragraph{Noise model (Patrini et al.).}
+Let $\tilde{y}$ be the observed label and $y^\star$ the true label. A row-stochastic matrix $\mathbf{T} \in \mathbb{R}^{C \times C}$ with $T_{ij} = P(\tilde{y}=j \mid y^\star=i)$ describes instance-independent label corruption. Given predicted clean distribution $\mathbf{p}$, the \emph{corrupted} predictive distribution is $\mathbf{p}' = \mathbf{T}^\top \mathbf{p}$ (column convention as in our code: $\mathbf{p} \mathbf{T}^\top$ in row form---see \cref{sec:forward}).
+
+%==============================================================================
+\section{Categorical cross-entropy (CCE)}
+%==============================================================================
+
+\paragraph{Definition.}
+\begin{equation}
+  \mathcal{L}_{\mathrm{CCE}}(\mathbf{z}, y) = -\log p_y .
+\end{equation}
+
+\paragraph{Properties.}
+CCE is the negative log-likelihood under a multinomial model; gradients w.r.t.\ logits are sharp and unbounded as $p_y \to 0$. It is \textbf{statistically efficient} on clean data but \textbf{memorizes} mislabeled examples in overparameterized networks \cite{zhang2018gce}.
+
+\paragraph{Implementation.}
+\texttt{nn.CrossEntropyLoss(logits, y)} in PyTorch (our \texttt{CCELoss} wrapper).
+
+\paragraph{Role in experiments.}
+\textbf{Upper bound} baseline and reference for val/test monitoring (even when training with another loss, we often log CCE on validation).
+
+%==============================================================================
+\section{Mean absolute error on probabilities (MAE)}
+%==============================================================================
+
+\paragraph{Definition used in code.}
+\begin{equation}
+  \mathcal{L}_{\mathrm{MAE}}(\mathbf{z}, y) = 1 - (\mathbf{e}_y^\top \mathbf{p}) = 1 - p_y .
+\end{equation}
+
+\paragraph{Interpretation.}
+This is the $\ell_1$ distance between $\mathbf{p}$ and the one-hot target \emph{restricted to the coordinate $y$}. It is \textbf{bounded above by 1} on that coordinate, which mitigates extreme gradients from mislabeled hard examples compared to CCE \cite{zhang2018gce}. MAE can underfit on difficult datasets because it treats all non-$y$ mass symmetrically only through $p_y$.
+
+\paragraph{Limit relation.}
+In the GCE family (\cref{sec:gce}), $q \to 1$ recovers an MAE-type objective (see \cite{zhang2018gce}).
+
+%==============================================================================
+\section{Generalized cross-entropy (GCE)}
+\label{sec:gce}
+%==============================================================================
+
+\subsection{Definition and limiting cases}
+
+Following Zhang and Sabuncu \cite{zhang2018gce}, for $q > 0$:
+\begin{equation}
+  \mathcal{L}_{\mathrm{GCE}(q)}(\mathbf{z}, y) = \frac{1 - p_y^{\,q}}{q}.
+\end{equation}
+For numerical stability our implementation uses $\texttt{clamp}(p_y, 10^{-9})$ before powers. The \textbf{limit $q \to 0$} recovers CCE:
+\begin{equation}
+  \lim_{q \to 0} \frac{1 - p_y^{\,q}}{q} = -\log p_y .
+\end{equation}
+The \textbf{limit $q = 1$} gives the MAE-type loss $1 - p_y$.
+
+\subsection{Why GCE helps with noisy labels (intuition and theory sketch)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Gradient magnitude:} For $0<q<1$, the derivative $\partial \mathcal{L}/\partial p_y$ grows more slowly than $1/p_y$ as $p_y \to 0$ compared to CCE, reducing the incentive to chase a wrong label with extreme logits.
+  \item \textbf{Interpolation:} $q$ smoothly interpolates between \textbf{log loss} (noise-sensitive, statistically efficient) and \textbf{MAE-type} behavior (more robust, potentially less discriminative).
+  \item \textbf{Empirical scope:} Zhang and Sabuncu demonstrate robustness on CIFAR/Fashion-MNIST with synthetic label noise \cite{zhang2018gce}.
+\end{itemize}
+
+\subsection{Truncated GCE (TruncGCE)}
+
+We implement a simple \textbf{confidence mask}: only apply GCE on samples with $p_y < k$ (default $k=0.5$). Rationale: if the model is already highly confident on the (possibly wrong) label, the gradient is suppressed---reducing memorization. This is a \textbf{heuristic} variant related to ``small-loss'' sample selection ideas in the literature (cf.\ co-teaching lines of work \cite{han2018}).
+
+\subsection{Sensitivity and ``graph trajectories'' in $(q,\eta)$}
+
+Battery~D sweeps $q \in \{0, 0.4, 0.8, 1\}$ at noise rates $\eta \in \{0, 0.2, 0.6\}$. The \textbf{trajectory} of test accuracy vs.\ epoch is a \textbf{dynamic} diagnostic; the \textbf{static} summary surface $(\eta, q) \mapsto \text{accuracy}$ (3D plot in vision code) shows whether robustness trades off systematically with $q$ at higher noise.
+
+\subsection{Interactive 3D plots (extension)}
+Static PNGs are produced with Matplotlib (\texttt{mpl\_toolkits.mplot3d}). For rotatable figures in Jupyter, wrap the same grid with \texttt{plotly.graph\_objects.Surface}:
+\begin{verbatim}
+import plotly.graph_objects as go
+# E, Q, Z = noise rates, q values, accuracy matrix
+fig = go.Figure(data=[go.Surface(x=E, y=Q, z=Z)])
+fig.update_layout(scene=dict(xaxis_title='eta', yaxis_title='q',
+                             zaxis_title='accuracy'))
+fig.write_html('surface_gce_interactive.html')
+\end{verbatim}
+
+%==============================================================================
+\section{Symmetric cross-entropy (SCE)}
+%==============================================================================
+
+Wang et al.\ \cite{wang2019sce} combine a \textbf{standard CE} term with a \textbf{reverse CE} term to penalize over-confidence on wrong classes when labels are untrustworthy.
+
+\paragraph{Our implementation.}
+\begin{equation}
+  \mathcal{L}_{\mathrm{SCE}} = \alpha \cdot \mathrm{CE}(\mathbf{p}, y) + \beta \cdot \mathrm{RCE}(\mathbf{p}, \mathbf{e}_y^{\mathrm{smooth}}),
+\end{equation}
+where RCE uses $\mathbf{e}_y$ smoothed/clamped to $10^{-4}$ to avoid $\log 0$:
+\texttt{y\_oh = one\_hot(y).clamp(min=1e-4)}, and $\mathrm{RCE} = - \sum_k p_k \log e_{y,k}$.
+
+\paragraph{Default hyperparameters.} $\alpha=0.1$, $\beta=1.0$ (as in our registry).
+
+\paragraph{Similarity to GCE.}
+Both \textbf{blend robustness with discrimination}; SCE does so via an explicit two-term symmetric construction, whereas GCE uses a single $q$-parameterized bridge between CCE and MAE.
+
+%==============================================================================
+\section{S-divergence style loss (SDIV)}
+%==============================================================================
+
+\paragraph{Connection to the statistical literature.}
+Ghosh et al.\ \cite{ghosh2017bern} introduce the S-divergence as a two-parameter family unifying power and density-power divergences. Our classification code uses a \textbf{discrete surrogate} aligned with the rSDNet implementation:
+\begin{equation}
+  A = 1 + \lambda(1-\beta), \qquad B = \beta - \lambda(1-\beta),
+\end{equation}
+\begin{equation}
+  \mathcal{L}_{\mathrm{SDIV}} = \frac{1}{A}\sum_{k=1}^C p_k^{\, \beta+1} - \frac{1+\beta}{A B}\, p_y^{\, B},
+\end{equation}
+with defaults $\beta = 0.05$, $\lambda = -0.8$ (as in part~2/part~3 ports). Optional trimming keeps the smallest fraction of per-sample losses (disabled by default).
+
+\paragraph{Relation to $\beta$-divergence / DPD.}
+When $\lambda=0$, the construction collapses toward a density-power / ``$\beta$'' flavour in probability space \cite{ghosh2017bern}.
+
+\paragraph{Novelty.}
+SDIV explicitly ties deep robust classification experiments to the \textbf{institutional} S-divergence programme (ISI Kolkata / collaborators), beyond off-the-shelf GCE/SCE.
+
+%==============================================================================
+\section{Forward loss correction (ForwardT and Forward$\hat{\mathbf{T}}$)}
+\label{sec:forward}
+%==============================================================================
+
+Following Patrini et al.\ \cite{patrini2017}, if $\mathbf{T}$ is known, train with
+\begin{equation}
+  \mathcal{L}_{\mathrm{Fwd}}(\mathbf{z}, \tilde{y}) = -\log \big([\mathbf{T}^\top \mathbf{p}]_{\tilde{y}}\big),
+\end{equation}
+i.e.\ the observed label column of the \emph{mixed} distribution $\mathbf{T}^\top \mathbf{p}$. Our code implements \texttt{corrected = probs @ T.t()} (batch row vectors) and takes the index $\tilde{y}$.
+
+\paragraph{Estimated matrix.}
+We run a short CCE warm-up, then estimate $\hat{\mathbf{T}}$ by the ``anchor points'' heuristic from Patrini et al.\ \cite{patrini2017} (per-class argmax prototype). This yields \textbf{Forward$\hat{\mathbf{T}}$} (\texttt{ForwardThat}).
+
+\paragraph{When it shines.}
+Oracle $\mathbf{T}$ matches \textbf{uniform} or \textbf{cyclic} synthetic noise in our batteries; mismatch between assumed $\mathbf{T}$ and real noise hurts---a documented limitation motivating \textbf{noise-model selection} future work.
+
+%==============================================================================
+\section{Noise injection protocols (experiments)}
+%==============================================================================
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Uniform:} With probability $\eta$, replace label by a uniform draw from wrong classes (symmetric).
+  \item \textbf{Class-dependent (cyclic):} With probability $\eta$, map $c \to (c+1)\bmod C$ \cite{patrini2017}.
+\end{itemize}
+
+These align with classical robustness benchmarks and permit \textbf{oracle} $\mathbf{T}$ for forward correction.
+
+%==============================================================================
+\section{Per-dataset implementation notes}
+%==============================================================================
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Module} & \textbf{Data} & \textbf{Encoder} & \textbf{Loss input} \\
+\midrule
+Part 3 NLP & Emotion, HealthFact, PubMedQA & BERT / DistilBERT / SciBERT & logits $(B,C)$ \\
+Part 4 Vision & PathMNIST, DermaMNIST & ViT / Swin & logits $(B,C)$ \\
+Part 4 MM & Fashion-MM, PathMNIST+CLIP & CLIP dual encoder & similarity logits $(B,C)$ \\
+\bottomrule
+\end{tabular}
+\caption{All losses consume \textbf{class logits} (or CLIP similarity scores treated as logits).}
+\end{table}
+
+\paragraph{MedMNIST.}
+Yang et al.\ \cite{yang2023medmnist} provide standardized biomedical image classification; we use official splits and class names for text prompts (CLIP).
+
+%==============================================================================
+\section{Similarities and dissimilarities (summary table)}
+%==============================================================================
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{2.2cm}p{3.2cm}p{3.5cm}p{4.5cm}@{}}
+\toprule
+\textbf{Loss} & \textbf{Primary mechanism} & \textbf{Hyperparams} & \textbf{Compared to CCE} \\
+\midrule
+CCE & NLL / KL & none & baseline \\
+MAE & bounded $1-p_y$ & none & flatter gradients at small $p_y$ \\
+GCE & bridges CCE--MAE & $q$ & tunable robustness--efficiency \\
+TruncGCE & masked GCE & $q$, $k$ & suppresses hi-conf wrong \\
+SCE & CE + reverse CE & $\alpha,\beta$ & symmetric penalty \\
+SDIV & DPD/S-div flavour & $\beta,\lambda$ & links to rSDNet theory \\
+Forward & use $\mathbf{T}$ & $\mathbf{T}$ or $\hat{\mathbf{T}}$ & model-based correction \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==============================================================================
+\section{Metrics and reporting}
+%==============================================================================
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Test accuracy} on \emph{clean} held-out labels (noise only on training).
+  \item \textbf{Confusion matrices} at $\eta=0$ for interpretability.
+  \item \textbf{Learning curves:} train loss, val loss (often CCE for comparability), val/test accuracy vs.\ epoch.
+  \item \textbf{Aggregates:} mean $\pm$ std over seeds where applicable.
+\end{itemize}
+
+%==============================================================================
+\section{Literature map (where these losses originated)}
+%==============================================================================
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{GCE / MAE trade-off:} Zhang \& Sabuncu, NeurIPS 2018 \cite{zhang2018gce}.
+  \item \textbf{SCE:} Wang et al., ICCV 2019 \cite{wang2019sce}.
+  \item \textbf{Forward correction \& noise matrix:} Patrini et al., CVPR 2017 \cite{patrini2017}.
+  \item \textbf{S-divergence (statistics):} Ghosh et al., Bernoulli 2017 \cite{ghosh2017bern}.
+  \item \textbf{Regression robust NN ($\beta$-div):} Ghosh \& Jana, arXiv:2602.08933 \cite{ghosh2026arxiv}.
+  \item \textbf{Medical image benchmark:} MedMNIST v2 \cite{yang2023medmnist}.
+  \item \textbf{CLIP (multimodal):} Radford et al., ICML 2021 \cite{radford2021clip}.
+\end{itemize}
+
+%==============================================================================
+\section{Future work (extendable weekly roadmap)}
+%==============================================================================
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Noise-model mismatch:} evaluate forward correction under \emph{heterogeneous} $\mathbf{T}(x)$ and combine with GCE/SCE (semi-supervised $\mathbf{T}$ estimation).
+  \item \textbf{Instance-dependent noise:} implement latent-feature dependent corruption \cite{xiao2015} with matching losses.
+  \item \textbf{Loss interpolation schedules:} anneal $q$ in GCE or $(\alpha,\beta)$ in SCE during training (curriculum).
+  \item \textbf{Provable connections:} formalize links between GCE gradients and influence functions \cite{hampel2011robust}.
+  \item \textbf{Medical multimodal:} extend beyond prompts to report--image models (e.g.\ CXR + radiology reports) with partial labels.
+  \item \textbf{Interactive dashboards:} standardize Plotly surfaces for all batteries; host HTML alongside CSV/PNG.
+  \item \textbf{rSDNet end-to-end:} replace SDIV surrogate with full S-divergence training objective where tractable.
+\end{enumerate}
+
+%==============================================================================
+\section*{Closing remarks for the supervisory meeting}
+%==============================================================================
+
+We have a \textbf{coherent pipeline} from classical robust statistics ($\beta$-, S-divergences) to modern deep classification robustness (GCE, SCE, forward correction), realized in \textbf{reproducible code} across NLP and vision/multimodal tasks. The central scientific story is \emph{not} that every loss is new, but that we can \textbf{systematically compare} mechanisms (bounded vs.\ reweighted vs.\ model-corrected) under controlled noise, tied to institutional theory contributions, with clear \textbf{next steps} above.
+
+\begin{thebibliography}{99}
+
+\bibitem{zhang2018gce}
+Z.~Zhang and M.~R. Sabuncu.
+\newblock Generalized Cross Entropy Loss for Training Deep Neural Networks with Noisy Labels.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{wang2019sce}
+Y.~Wang, X.~Ma, Z.~Chen, Y.~Luo, J.~Yi, and J.~Bailey.
+\newblock Symmetric Cross Entropy for Robust Learning with Noisy Labels.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)}, 2019.
+
+\bibitem{patrini2017}
+G.~Patrini, F.~Nielsen, R.~Nock, and T.~Caetano.
+\newblock Making Deep Neural Networks Robust to Label Noise: A Loss Correction Approach.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, 2017.
+
+\bibitem{ghosh2017bern}
+A.~Ghosh, I.~Harris, A.~Maji, A.~Basu, and L.~Pardo.
+\newblock A Generalized Divergence for Statistical Inference.
+\newblock \emph{Bernoulli}, 23(4A):2746--2783, 2017.
+
+\bibitem{ghosh2026arxiv}
+A.~Ghosh and S.~Jana.
+\newblock Provably robust learning of regression neural networks using $\beta$-divergences.
+\newblock arXiv:2602.08933, 2026.
+
+\bibitem{yang2023medmnist}
+J.~Yang, R.~Shi, D.~Wei, Z.~Liu, L.~Zhao, B.~Ke, P.~Pfister, and B.~Ni.
+\newblock MedMNIST v2 --- A large-scale lightweight benchmark for 2D and 3D biomedical image classification.
+\newblock \emph{Scientific Data}, 10(1):41, 2023.
+
+\bibitem{radford2021clip}
+A.~Radford, J.~W. Kim, C.~Hallacy, et al.
+\newblock Learning Transferable Visual Models From Natural Language Supervision.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2021.
+
+\bibitem{han2018}
+B.~Han, Q.~Yao, X.~Yu, G.~Niu, M.~Xu, W.~Hu, I.~Tsang, and M.~Sugiyama.
+\newblock Co-teaching: Robust training of deep neural networks with extremely noisy labels.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{xiao2015}
+T.~Xiao, T.~Xia, Y.~Yang, C.~Huang, and X.~Wang.
+\newblock Learning from massive noisy labeled data for image classification.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, 2015.
+
+\bibitem{hampel2011robust}
+F.~R. Hampel, E.~M. Ronchetti, P.~J. Rousseeuw, and W.~A. Stahel.
+\newblock \emph{Robust Statistics: The Approach Based on Influence Functions}.
+\newblock Wiley, 2011.
+
+\end{thebibliography}
+
+\end{document}

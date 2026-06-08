@@ -1,0 +1,30 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+.mypy_cache/
+.ruff_cache/
+
+# macOS
+.DS_Store
+.sixth/
+.comments/
+
+# Editor
+.vscode/settings.json
+
+# Large binary artifacts (keep PNGs and code, exclude heavy zips)
+*.zip
+results_12April2026.zip
+
+# Sensitive / private
+[Dont_share]*
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+_stage_*/

@@ -1,0 +1,96 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Ruff configuration — fast Python linter + formatter
+# Docs: https://docs.astral.sh/ruff/configuration/
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[tool.ruff]
+# Target Python version
+target-version = "py310"
+line-length = 120
+
+# Files to check
+include = ["*.py"]
+exclude = [
+    "__pycache__",
+    ".git",
+    "*.ipynb",
+    "[Abhik]*",
+    "plots_results",
+    "results_*",
+]
+
+[tool.ruff.lint]
+# Rules to enable (see https://docs.astral.sh/ruff/rules/)
+select = [
+    "E",     # pycodestyle errors (syntax, whitespace)
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes (undefined names, unused imports, etc.)
+    "I",     # isort (import ordering)
+    "UP",    # pyupgrade (modernise Python syntax)
+    "B",     # flake8-bugbear (common bugs and design problems)
+    "SIM",   # flake8-simplify (simplifiable constructs)
+    "N",     # pep8-naming (naming conventions)
+    "RUF",   # ruff-specific rules
+]
+
+# Rules to ignore (research code is allowed more flexibility)
+ignore = [
+    "E501",   # line too long — handled by formatter, not critical for research
+    "N802",   # function name should be lowercase (we have GCELoss etc.)
+    "N803",   # argument name should be lowercase (we use T, C, X_tr etc.)
+    "N806",   # variable in function should be lowercase (A, B, Z etc.)
+    "N815",   # mixed case variable in class scope
+    "N816",   # mixed case variable in global scope
+    "B905",   # zip without strict= (Python 3.10+)
+    "UP015",  # redundant open mode
+    "SIM108", # ternary operator — sometimes less readable
+    "F841",   # local variable assigned but never used (common in research iteration)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Part 2 uses TensorFlow which has different patterns
+"part2_rSDNet_Transformer_Experiments.py" = ["F811", "E402"]
+# Parts 3 & 4 have expected import patterns
+"part3_BERT_Robust_NLP_Experiments.py" = ["E402"]
+"part4_Multimodal_Vision_Robust_Experiments.py" = ["E402", "F811"]
+
+[tool.ruff.format]
+# Use double quotes (matches existing code style)
+quote-style = "double"
+indent-style = "space"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Mypy configuration — static type checker
+# Docs: https://mypy.readthedocs.io/en/stable/config_file.html
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[tool.mypy]
+python_version = "3.10"
+
+# Relaxed settings for research code — catch real errors, not pedantic type annotations
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true          # Don't error on untyped third-party libs
+disallow_untyped_defs = false          # Research code often lacks type annotations
+check_untyped_defs = true              # But DO check the logic inside untyped functions
+no_implicit_optional = true            # Catch accidental None issues
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Per-module overrides
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "transformers.*",
+    "datasets.*",
+    "medmnist.*",
+    "tensorflow.*",
+    "keras.*",
+    "sklearn.*",
+    "seaborn.*",
+    "matplotlib.*",
+    "tqdm.*",
+    "huggingface_hub.*",
+    "torchvision.*",
+]
+ignore_missing_imports = true
