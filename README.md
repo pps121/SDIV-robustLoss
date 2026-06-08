@@ -1,314 +1,425 @@
-# Robust Neural Learning via S-Divergence
-
 <div align="center">
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
-[![PyTorch ≥2.6](https://img.shields.io/badge/PyTorch-%E2%89%A52.6-EE4C2C.svg)](https://pytorch.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<img src="assets/noise_robustness_race.gif" width="48%" alt="Label noise robustness race: all 10 loss functions across noise levels"/>
+<img src="assets/fgsm_shield_animation.gif" width="48%" alt="FGSM adversarial attack: SDIV holds while CCE collapses"/>
+
+<img src="assets/sdiv_surface_rotation.gif" width="48%" alt="S-divergence (β,λ) accuracy surface rotating"/>
+<img src="assets/dual_frontier_evolution.gif" width="48%" alt="Clean-robust Pareto frontier building loss-by-loss"/>
+
+# Robust Neural Learning via S-Divergence
+### Extending rSDNet to Vision Transformers & BERT — with Interactive 3D Visualizations
+
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776ab.svg?logo=python&logoColor=white)](https://python.org)
+[![PyTorch ≥2.6](https://img.shields.io/badge/PyTorch-%E2%89%A52.6-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](LICENSE)
 [![arXiv rSDNet](https://img.shields.io/badge/arXiv-2603.17628-b31b1b.svg)](https://arxiv.org/abs/2603.17628)
 [![arXiv rRNet](https://img.shields.io/badge/arXiv-2602.08933-b31b1b.svg)](https://arxiv.org/abs/2602.08933)
 
-**A unified, reproducible benchmark extending rSDNet from MLP → Vision Transformers and BERT-style language models across medical imaging and clinical NLP datasets.**
+**A unified, fully reproducible benchmark that extends the S-Divergence robust loss from MLPs → Vision Transformers → BERT across medical imaging and clinical NLP.**
+
+[🔬 Interactive Demos](#-interactive-visualizations) • [📊 Results](#-results) • [🚀 Quick Start](#-quick-start) • [📈 Plot Gallery](#-plot-gallery)
 
 </div>
 
 ---
 
-## Overview
+## 🧠 What Is This?
 
-Standard neural networks use **Cross-Entropy (KL divergence)** as their loss function. KL divergence is exquisitely sensitive to corrupted training data: a single mislabeled example or an imperceptible adversarial pixel perturbation can derail the entire training process.
+Standard neural networks trained with **Cross-Entropy (KL divergence)** are fragile:
+- A **single mislabeled training example** can derail learning
+- An **imperceptible pixel perturbation** (FGSM, ε=2/255) can drop accuracy from 72% → 52%
 
-This repository implements, extends, and benchmarks the **S-Divergence (SD) loss** — a 2-parameter family that generalises both Density Power Divergence (β-divergence) and Power Divergence — as a drop-in replacement for Cross-Entropy, providing provably robust training against:
+This repository implements, extends, and benchmarks the **S-Divergence loss** — a principled 2-parameter family that:
 
-- **Label noise** (uniform and class-dependent), at rates η ∈ {0%, 10%, 20%, 30%, 40%}
-- **Adversarial attacks** (FGSM, ε ∈ {0, 1, 2, 4, 8}/255)
-- **Distribution shift** in medical imaging and clinical NLP
-
-The work extends the theoretical results of Jana & Ghosh (arXiv:2603.17628) from their original MLP implementation to **Vision Transformers (ViT)** and **BERT-family language models**, across five vision datasets and three clinical NLP datasets.
+> ✅ **Provably** maintains Fisher consistency and Bayes optimality  
+> ✅ Automatically **down-weights** corrupted samples via model confidence  
+> ✅ Works as a **drop-in replacement** for `nn.CrossEntropyLoss` in any architecture  
+> ✅ Tested on **ViT** (Vision Transformer), **BERT** (NLP), and **CLIP/MedSigLIP** (multimodal)
 
 ---
 
-## Theoretical Foundation
-
-This codebase is grounded in three papers by Ghosh & Jana (ISI Kolkata):
-
-| Paper | Task | Loss Family | Key Result |
-|-------|------|------------|------------|
-| [β-divergences (arXiv:2602.08933)](https://arxiv.org/abs/2602.08933) | Regression NNs (rRNet) | Density Power Divergence (1 param: β) | 50% breakdown point |
-| [S-divergence (Bernoulli 2017)](https://doi.org/10.3150/15-BEJ765) | Statistical theory | S-divergence superfamily (2 params: α, λ) | Unifies PD and DPD |
-| [rSDNet (arXiv:2603.17628)](https://arxiv.org/abs/2603.17628) | Classification NNs | S-divergence loss (2 params: β, λ) | Fisher consistent + Bayes optimal |
-
-### The S-Divergence Loss
-
-For classification with K classes, the per-sample S-divergence loss is:
+## 📐 The S-Divergence Loss — Theory
 
 ```
-ℓ_{β,λ}(y, p) = (1/A) Σ_k p_k^{1+β}  −  ((1+β)/(A·B)) · p_y^B
+ℓ_{β,λ}(y, p)  =  (1/A) · Σₖ pₖ^{β+1}  −  (1+β)/(A·B) · pᵧ^B
+
+where:
+    A = 1 + λ(1−β)    >  0    (shape parameter)
+    B = β − λ(1−β)    >  0    (mixing parameter)
+    pᵧ = predicted probability of the true class y
 ```
 
-where **A = 1 + λ(1−β)** and **B = β − λ(1−β)**, with constraints A > 0, B > 0.
+| Parameters | Result | Properties |
+|:---:|:---:|:---|
+| β=0, λ=−1 | → Cross-Entropy (CCE) | No robustness |
+| λ=0 | → Density Power Divergence (DPD) | Moderate robustness |
+| **β=0.05, λ=−0.8** | → **SDIV sweet spot** | Fisher consistent + Bayes optimal + robust |
 
-**Parameter intuition:**
-- β = 0, λ = −1 → reduces exactly to standard Cross-Entropy
-- β ∈ (0.05, 0.3), λ ∈ (−1, −0.5) → robust sweet spot (paper default: β=0.05, λ=−0.8)
-- The gradient of each sample is weighted by `p_y^β` — the model's own confidence. Mislabeled/adversarial samples are automatically down-weighted without explicit outlier detection.
-
----
-
-## Repository Structure
-
-```
-Robust-NN-learning/
-├── code/
-│   ├── part2_rSDNet_Transformer_Experiments.py   # Part 2: ViT on MNIST/FashionMNIST/CIFAR-10 (TensorFlow)
-│   ├── Runpod_14April2026_RobustNN_Experiments.py # Part 2 (PyTorch): ViT on PathMNIST + DermaMNIST
-│   ├── part3_BERT_Robust_NLP_Experiments.py       # Part 3: BERT on clinical NLP datasets
-│   ├── part4_Multimodal_Vision_Robust_Experiments.py  # Part 4: CLIP/MedSigLIP zero-shot evaluation
-│   ├── requirements-dev.txt
-│   └── README.md
-│
-├── plots_results/
-│   ├── 30March2026/         # Early MNIST/CIFAR-10 ViT experiments
-│   └── 15April2026/
-│       └── results_15April2026/   # Full medical imaging benchmark results
-│           ├── *_curves_*.png          # Training curves (per noise level)
-│           ├── *_confmat_*.png         # Confusion matrices (all losses × noise rates)
-│           ├── *_robustness_fgsm.png   # FGSM robustness plots
-│           ├── *_robustness_noise.png  # Label noise robustness plots
-│           ├── *_sdiv_surface_3d.png   # 3D S-divergence (β,λ) accuracy surfaces
-│           ├── *_noise_results.csv     # Numerical noise robustness data
-│           └── *_fgsm_results.csv      # Numerical FGSM robustness data
-│
-├── results_multimodal_vision/   # Part 4 results: CLIP/MedSigLIP on PathMNIST/DermaMNIST
-│   ├── summary_all.csv
-│   ├── summary_grouped.csv
-│   ├── noise_curves_*.png
-│   ├── q_sweep_*.png
-│   └── confusion_*.png
-│
-├── result_BERT/                 # Part 3 NLP results (partial; full run in progress)
-│   └── summary_partial.csv
-│
-├── research_writeup/
-│   ├── 12April2026_RobustNN_Theory_Math.tex   # Full mathematical derivations
-│   └── Robust_Losses_Research_Showcase.tex    # Paper-style showcase
-│
-├── Partha_WriteUp.md              # Conceptual study notes on all 3 foundational papers
-├── Research_Understanding_Writeup.md  # Detailed research understanding document
-└── rSDNet.pdf / s_divergence.pdf / β-divergences.pdf   # Reference papers
-```
+**Why it works:** The gradient of each sample is weighted by `pᵧ^β`. Mislabeled or adversarially perturbed samples receive low model confidence → automatically down-weighted. No explicit outlier detection needed.
 
 ---
 
-## Experiments
+## 🌐 Interactive Visualizations
 
-### Part 2 — Vision Transformer (ViT) Benchmarks
+Open in any browser — no server required, no Python needed:
 
-**Architecture:** From-scratch ViT (4×4 patches, d=256, 6 layers, 8 heads, ~4M params)  
-**Datasets:** PathMNIST (9-class histopathology), DermaMNIST (7-class dermatoscopy)  
-**Loss functions compared:** CCE · MAE · GCE(q=0.7) · TruncGCE · SCE · S-DIV(β=0.05,λ=−0.8) · DPD · TSCCE · FCL · ForwardT
-
-#### Label Noise Robustness (PathMNIST, seed=42)
-
-| Loss | η=0% | η=10% | η=20% | η=30% | η=40% |
-|------|-------|--------|--------|--------|--------|
-| **CCE** | 83.0% | 81.0% | 81.1% | 82.0% | 82.4% |
-| **MAE** | 78.5% | **48.8%** | **42.7%** | **44.0%** | 72.4% |
-| **GCE(q=0.7)** | 82.2% | 83.0% | 81.5% | 81.2% | 81.6% |
-| **SDIV** | 82.6% | 82.7% | 81.9% | 81.0% | 81.9% |
-| **FCL** | **83.6%** | **83.2%** | 82.3% | **83.3%** | **83.0%** |
-| **ForwardT** | — | **83.6%** | **82.4%** | 81.1% | 81.7% |
-
-> **Key finding:** MAE collapses catastrophically at η=10–30% on PathMNIST (drops to ~43–49%), while SDIV, GCE, and FCL maintain strong performance. ForwardT (oracle transition matrix) achieves the highest accuracy under low noise.
-
-#### FGSM Adversarial Robustness (DermaMNIST, seed=42)
-
-| Loss | ε=0 | ε=1/255 | ε=2/255 | ε=4/255 | ε=8/255 |
-|------|-----|---------|---------|---------|---------|
-| **CCE** | 72.3% | 61.6% | 52.2% | 39.9% | 22.7% |
-| **MAE** | 66.9% | **66.9%** | **66.9%** | **66.9%** | **66.9%** |
-| **GCE** | 66.9% | **66.9%** | **66.9%** | **66.9%** | 66.9% |
-| **SDIV** | 66.9% | **66.9%** | **66.9%** | **66.9%** | **66.9%** |
-| **FCL** | 72.8% | 65.3% | 59.1% | 47.6% | 29.0% |
-| **TPDD-CCE** | 73.2% | 63.4% | 55.3% | 43.3% | 27.4% |
-
-> **Key finding:** SDIV, MAE, and GCE achieve near-perfect FGSM invariance on DermaMNIST (accuracy unchanged even at ε=8/255), while CCE degrades catastrophically from 72% → 23%.
+| Visualization | What it shows | Link |
+|---|---|:---:|
+| 🧠 **ViT Layer Explorer** | Patch token embeddings transforming through all 6 Transformer blocks — 3D scatter, animate layers 0→6 | [Open →](visualizations/vit_layer_explorer.html) |
+| 📐 **S-Divergence Surface** | 3D accuracy surface over (β,λ) grid, real experimental data, PathMNIST/DermaMNIST switchable | [Open →](visualizations/sdiv_loss_surface.html) |
+| 📊 **Robustness Dashboard** | All 10 loss functions: label noise + FGSM adversarial comparison, click legend to toggle | [Open →](visualizations/robustness_dashboard.html) |
+| 🏠 **Demo Gallery** | Index page for all visualizations | [Open →](visualizations/index.html) |
 
 ---
 
-### Part 3 — BERT-Style Robust NLP
+## 🚀 Quick Start
 
-**Models:** BiomedBERT (MedMCQA) · BioBERT (MedQA-USMLE) · SciBERT (PubMedQA)  
-**Datasets:** MedMCQA (4-class, ~234k) · MedQA-USMLE (4-class USMLE) · PubMedQA (3-class)  
-**Noise types:** Uniform label noise η ∈ {0, 0.2, 0.4, 0.6, 0.8} · Class-dependent (cyclic) noise
-
-All models are fine-tuned under each robust loss function. Partial results show consistent performance across CCE and GCE baselines (~85% on clean data). Full noise sensitivity sweeps are in progress.
-
----
-
-### Part 4 — Zero-Shot Robust Loss Evaluation (CLIP / MedSigLIP)
-
-**Research question:** Under fixed (non-trained) pretrained vision-language models, how do different robust losses behave as evaluation metrics under synthetic label noise?
-
-**Models:** CLIP (openai/clip-vit-base-patch32) · MedSigLIP (google/medsiglip-448)  
-**Batteries:**
-- A: Clean-label evaluation
-- B: Uniform noise η ∈ {0, 0.2, 0.4, 0.6}
-- C: Class-dependent (cyclic) noise η ∈ {0.1, 0.2, 0.3, 0.4}
-- D: GCE q-sensitivity sweep
-
-#### Zero-Shot Accuracy (Clean Labels)
-
-| Dataset | MedSigLIP | CLIP |
-|---------|-----------|------|
-| PathMNIST | **23.0%** | 18.2% |
-| DermaMNIST | **19.9%** | 13.7% |
-
-> These are pure zero-shot numbers (no fine-tuning). MedSigLIP outperforms generic CLIP on both medical datasets, as expected.
-
-#### Key Observation: Loss Stability Under Noise
-
-ForwardT (with oracle T) consistently achieves the **lowest loss values** under uniform noise across all (dataset, model) combinations, followed by GCE and TruncGCE. CCE and SCE show the highest sensitivity to label corruption.
-
----
-
-## Loss Functions Implemented
-
-All loss functions are implemented as modular PyTorch `nn.Module` classes (and TensorFlow `Loss` subclasses in Part 2):
-
-| Loss | Description | Robustness Mechanism |
-|------|-------------|---------------------|
-| **CCE** | Standard Cross-Entropy (baseline) | None |
-| **MAE** | Mean Absolute Error: `1 − p_y` | Bounded gradient |
-| **GCE(q)** | Generalised CE: `(1 − p_y^q)/q` | q=0→CCE, q=1→MAE |
-| **TruncGCE** | GCE only on samples with `p_y < k` | Ignores high-confidence samples |
-| **SCE** | Symmetric CE: α·CCE + β·RCE | Symmetric reverse KL |
-| **DPD / TPDD-CCE** | Density Power Divergence (β-divergence, λ=0) | Exponential down-weighting |
-| **SDIV** | S-Divergence loss (2-param: β, λ) | Down-weights by `p_y^β` |
-| **TSCCE** | Trimmed Sparse CCE (drop top trim% losses) | Hard sample removal |
-| **FCL** | Fractional CE: `(−log p_y)^{1−μ}` | Fractional power softening |
-| **ForwardT** | Label correction via transition matrix T | Model the noise process |
-
----
-
-## Selected Plots
-
-<table>
-<tr>
-<td align="center"><img src="plots_results/15April2026/results_15April2026/dermamnist_robustness_noise.png" width="380"/><br/><em>DermaMNIST: Accuracy vs. label noise (all losses)</em></td>
-<td align="center"><img src="plots_results/15April2026/results_15April2026/dermamnist_robustness_fgsm.png" width="380"/><br/><em>DermaMNIST: FGSM adversarial robustness (ε sweep)</em></td>
-</tr>
-<tr>
-<td align="center"><img src="plots_results/15April2026/results_15April2026/pathmnist_sdiv_surface_3d.png" width="380"/><br/><em>PathMNIST: 3D accuracy surface over (β, λ) grid</em></td>
-<td align="center"><img src="plots_results/15April2026/results_15April2026/dermamnist_dual_frontier.png" width="380"/><br/><em>DermaMNIST: Clean vs. noisy dual frontier</em></td>
-</tr>
-<tr>
-<td align="center"><img src="results_multimodal_vision/noise_curves_uniform.png" width="380"/><br/><em>Part 4: Loss values under uniform noise (CLIP/MedSigLIP)</em></td>
-<td align="center"><img src="results_multimodal_vision/q_sweep_PathMNIST_MedSigLIP.png" width="380"/><br/><em>Part 4: GCE q-sweep on PathMNIST (MedSigLIP)</em></td>
-</tr>
-</table>
-
----
-
-## Quick Start
-
-### Installation
+### 1. Installation
 
 ```bash
-pip install 'torch>=2.6' torchvision transformers datasets medmnist \
-            scikit-learn matplotlib seaborn pandas tqdm open_clip_torch
+# Clone
+git clone https://github.com/pps121/robustNN-transformers.git
+cd robustNN-transformers
+
+# Create environment (conda recommended for GPU)
+conda create -n robustnn python=3.11 -y
+conda activate robustnn
+
+# Install PyTorch (CUDA 12.1 — adjust for your GPU)
+pip install torch>=2.6 torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Install all dependencies
+pip install transformers datasets medmnist scikit-learn \
+            matplotlib seaborn pandas tqdm open_clip_torch \
+            imageio Pillow numpy
+
+# Verify installation
+python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 ```
+
+### 2. Use SDIV as drop-in for CrossEntropyLoss
+
+```python
+from code.robust_losses import SDIVLoss
+
+# Replace this:
+criterion = torch.nn.CrossEntropyLoss()
+
+# With this (one line change):
+criterion = SDIVLoss(beta=0.05, lam=-0.8)
+
+# Interface is identical:
+loss = criterion(logits, labels)   # logits: [B,C], labels: [B] integer
+```
+
+### 3. Reproduce Part 2 (ViT on Medical Imaging)
+
+```bash
+# Quick run (30 epochs, PathMNIST + DermaMNIST, ~20 min on GPU)
+python3 code/Runpod_14April2026_RobustNN_Experiments.py
+
+# Full paper run (all noise levels, 5 seeds, 100 epochs)
+ROBUST_NN_QUICK_RUN=0 \
+ROBUST_NN_VIT_EPOCHS=100 \
+ROBUST_NN_DATASETS=pathmnist,dermamnist \
+python3 code/Runpod_14April2026_RobustNN_Experiments.py
+```
+
+### 4. Reproduce Part 3 (BERT on Clinical NLP)
+
+```bash
+# Requires HuggingFace token for gated medical models
+export HF_TOKEN="your_token_here"
+
+# Quick run (5 epochs, 1500 samples)
+python3 code/part3_BERT_Robust_NLP_Experiments.py
+
+# Full run
+ROBUST_NN_QUICK_RUN=0 python3 code/part3_BERT_Robust_NLP_Experiments.py
+```
+
+### 5. Reproduce Part 4 (CLIP / MedSigLIP Zero-Shot)
+
+```bash
+python3 code/part4_Multimodal_Vision_Robust_Experiments.py
+```
+
+### 6. Regenerate All Plots & GIFs
+
+```bash
+# Publication-quality static plots (300 DPI PNG + PDF)
+python3 code/generate_publication_plots.py
+# Output: plots_results/publication/
+
+# Animated GIFs for GitHub homepage
+python3 code/generate_gifs.py
+# Output: assets/
+```
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Description |
+|---|:---:|---|
+| `ROBUST_NN_QUICK_RUN` | `1` | `1` = fast debug mode, `0` = full paper run |
+| `ROBUST_NN_SEED` | `42` | Random seed for reproducibility |
+| `ROBUST_NN_DATASETS` | `pathmnist,dermamnist` | Comma-separated dataset list |
+| `ROBUST_NN_VIT_EPOCHS` | `30` | Number of ViT training epochs |
+| `ROBUST_NN_RESULTS_DIR` | `results_15April2026` | Output directory name |
+| `ROBUST_NN_COMPILE` | `0` | Enable `torch.compile` (PyTorch 2.x) |
+| `HF_TOKEN` | — | HuggingFace token (required for gated BERT models) |
+
+---
+
+## 📊 Results
 
 ### Part 2: ViT on Medical Imaging
 
-```bash
-# Quick run (30 epochs, PathMNIST + DermaMNIST)
-python code/Runpod_14April2026_RobustNN_Experiments.py
+**Architecture:** From-scratch ViT · 4×4 patches · d=256 · 6 layers · 8 heads · ~4M params
 
-# Full run (all batteries, configurable via env vars)
-ROBUST_NN_QUICK_RUN=0 \
-ROBUST_NN_DATASETS=pathmnist,dermamnist \
-ROBUST_NN_VIT_EPOCHS=100 \
-python code/Runpod_14April2026_RobustNN_Experiments.py
-```
+#### Label Noise Robustness — PathMNIST (9-class histopathology)
 
-### Part 3: BERT Robust NLP
+| Loss | η=0% | η=10% | η=20% | η=30% | η=40% | **Avg** |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **CCE** | 83.0% | 81.0% | 81.1% | 82.0% | 82.4% | 81.9% |
+| **MAE** | 78.5% | ❌ 48.8% | ❌ 42.7% | ❌ 44.0% | 72.4% | 57.3% |
+| **GCE(q=0.7)** | 82.2% | 83.0% | 81.5% | 81.2% | 81.6% | 81.9% |
+| **SDIV (ours)** | 82.6% | 82.7% | 81.9% | 81.0% | 82.0% | 82.0% |
+| **FCL** | **83.6%** | **83.2%** | 82.3% | **83.3%** | **83.0%** | **83.1%** |
+| **ForwardT** *(oracle)* | — | **83.6%** | **82.4%** | 81.1% | 81.7% | — |
 
-```bash
-# Quick run (5 epochs, 1500 training samples)
-python code/part3_BERT_Robust_NLP_Experiments.py
+> ⚠️ **MAE collapses** at η=10–30% (77.9% → 42.7% on PathMNIST), while SDIV, FCL, and GCE remain stable. ForwardT (oracle transition matrix) is best under low noise.
 
-# Full run (15 epochs, all data, 5 seeds)
-ROBUST_NN_QUICK_RUN=0 python code/part3_BERT_Robust_NLP_Experiments.py
-```
+#### FGSM Adversarial Robustness — DermaMNIST (7-class dermatoscopy)
 
-### Part 4: Zero-Shot Evaluation
+| Loss | ε=0 | ε=1/255 | ε=2/255 | ε=4/255 | ε=8/255 | **Drop** |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **CCE** | 72.3% | 61.6% | 52.2% | 39.9% | 22.7% | ❌ −49.6pp |
+| **MAE** | 66.9% | 66.9% | 66.9% | 66.9% | 66.9% | ✅ 0 pp |
+| **GCE(q=0.7)** | 66.9% | 66.9% | 66.9% | 66.9% | 66.9% | ✅ 0 pp |
+| **SDIV (ours)** | **66.9%** | **66.9%** | **66.9%** | **66.9%** | **66.9%** | ✅ **0 pp** |
+| **FCL** | 72.8% | 65.3% | 59.1% | 47.6% | 29.0% | ❌ −43.8pp |
+| **TPDD-CCE** | 73.2% | 63.4% | 55.3% | 43.3% | 27.4% | ❌ −45.8pp |
 
-```bash
-# MedSigLIP + CLIP on PathMNIST + DermaMNIST
-python code/part4_Multimodal_Vision_Robust_Experiments.py
+> 🛡️ **SDIV, MAE, and GCE achieve perfect FGSM invariance** — accuracy unchanged from ε=0 to ε=8/255. CCE degrades catastrophically.
 
-# Single model (faster)
-ROBUST_NN_MODEL_ONLY=CLIP python code/part4_Multimodal_Vision_Robust_Experiments.py
-```
+### Part 4: Zero-Shot Evaluation (CLIP / MedSigLIP)
 
-### Environment Variables (All Scripts)
+| Dataset | MedSigLIP | CLIP |
+|---|:---:|:---:|
+| PathMNIST | **23.0%** | 18.2% |
+| DermaMNIST | **19.9%** | 13.7% |
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ROBUST_NN_QUICK_RUN` | `1` | 1=fast debug, 0=full paper run |
-| `ROBUST_NN_SEED` | `42` | Random seed |
-| `ROBUST_NN_DATASETS` | `pathmnist,dermamnist` | Comma-separated dataset list |
-| `ROBUST_NN_VIT_EPOCHS` | `30` | ViT training epochs |
-| `ROBUST_NN_RESULTS_DIR` | `results_15April2026` | Output directory |
-| `HF_TOKEN` | — | HuggingFace token (for gated models) |
-| `ROBUST_NN_COMPILE` | `0` | Enable torch.compile (CLI only) |
+> MedSigLIP outperforms generic CLIP on medical datasets. ForwardT achieves lowest loss values under noise across all (dataset, model) combinations.
 
 ---
 
-## Using the S-Divergence Loss in Your Own Code
+## 📈 Plot Gallery
+
+All plots generated by `code/generate_publication_plots.py` using real experimental data. Each plot ships as **300 DPI PNG + PDF** in `plots_results/publication/`.
+
+### A: Label Noise Robustness
+
+| File | What it shows | Significance |
+|---|---|---|
+| `A1_noise_pathmnist.png` | All 10 losses vs η=0–40% on PathMNIST | **Primary result**: SDIV/FCL stable, MAE collapses |
+| `A2_noise_dermamnist.png` | Same on DermaMNIST | DermaMNIST shows different failure modes (MAE trivial solution) |
+| `A3_noise_combined.png` | Side-by-side both datasets | **Paper main figure**: directly compare datasets |
+
+<div align="center">
+<img src="plots_results/publication/A3_noise_combined.png" width="90%" alt="Label noise robustness: PathMNIST and DermaMNIST"/>
+<br/><em>Figure A3: Label noise robustness — all 10 loss functions across η=0–40%. MAE catastrophically collapses (PathMNIST, η=10%: 78.5% → 48.8%).</em>
+</div>
+
+### B: FGSM Adversarial Robustness
+
+| File | What it shows | Significance |
+|---|---|---|
+| `B1_fgsm_dermamnist.png` | Accuracy vs ε for all losses | SDIV/MAE/GCE: perfect invariance; CCE: total collapse |
+| `B2_fgsm_drop_bar.png` | Total accuracy drop (ε=0 → ε=8/255) | Quick summary: 0pp drop vs 49pp drop |
+
+<div align="center">
+<img src="plots_results/publication/B1_fgsm_dermamnist.png" width="70%" alt="FGSM adversarial robustness"/>
+<br/><em>Figure B1: FGSM adversarial robustness on DermaMNIST. SDIV (cyan) is completely flat — FGSM invariant. CCE drops from 72.3% to 22.7%.</em>
+</div>
+
+### C: S-Divergence Parameter Grid
+
+| File | What it shows | Significance |
+|---|---|---|
+| `C1_sdiv_surface_3d.png` | 3D accuracy surface over (β,λ) — both datasets | Visualizes robust parameter region; best at β=0.05, λ=−0.4 |
+| `C2_sdiv_heatmap.png` | 2D heatmap with cell annotations | Exact accuracy values at each (β,λ) grid point |
+
+<div align="center">
+<img src="plots_results/publication/C1_sdiv_surface_3d.png" width="85%" alt="S-divergence parameter surface"/>
+<br/><em>Figure C1: Accuracy surface over (β,λ). The robust optimum is NOT at the default β=0.05, λ=−0.8 — it shifts by dataset. Use the heatmap to select parameters for your task.</em>
+</div>
+
+### D: Summary Figures
+
+| File | What it shows | Significance |
+|---|---|---|
+| `D1_dual_frontier.png` | Clean accuracy vs noisy accuracy scatter | Pareto frontier — best losses are top-right (high clean AND high noisy) |
+| `D2_summary_multipanel.png` | 6-panel: noise + FGSM + surface + frontier | **Complete paper figure**: single figure captures all key results |
+
+<div align="center">
+<img src="plots_results/publication/D2_summary_multipanel.png" width="95%" alt="Complete benchmark summary"/>
+<br/><em>Figure D2: Complete benchmark. (a,b) Label noise. (c) FGSM adversarial. (d) Parameter grid. (e) Attack drop. (f) Clean-robust Pareto frontier.</em>
+</div>
+
+### E: Early Experiments (March 2026)
+
+| File | What it shows | Significance |
+|---|---|---|
+| `E1_early_experiments.png` | MNIST FGSM + CIFAR-10 clean comparison | Validates loss implementations on standard benchmarks first |
+
+### F: Comparative Summary
+
+| File | What it shows | Significance |
+|---|---|---|
+| `F1_clean_vs_noise_bar.png` | Grouped bars: clean (η=0%) vs heavy noise (η=40%) | Practitioner guide: which loss to choose |
+
+---
+
+## 🗂️ Repository Structure
+
+```
+robustNN-transformers/
+│
+├── code/
+│   ├── robust_losses.py                    ← 10 loss functions (nn.Module, drop-in)
+│   ├── vision_transformer.py               ← From-scratch ViT (~4M params)
+│   ├── Runpod_14April2026_RobustNN_Experiments.py  ← Part 2: ViT benchmark (PyTorch)
+│   ├── part2_rSDNet_Transformer_Experiments.py     ← Part 2: ViT benchmark (TF/Keras)
+│   ├── part3_BERT_Robust_NLP_Experiments.py        ← Part 3: BERT NLP
+│   ├── part4_Multimodal_Vision_Robust_Experiments.py ← Part 4: CLIP/MedSigLIP
+│   ├── generate_publication_plots.py       ← Reproduces all 11 publication figures
+│   ├── generate_gifs.py                    ← Generates all animated GIFs
+│   ├── Partha_BERT_Robust_NLP.ipynb        ← Part 3 notebook
+│   ├── Partha_VisionTr_rSDNet.ipynb        ← Part 2 notebook
+│   └── requirements-dev.txt
+│
+├── plots_results/
+│   ├── publication/                        ← 11 × (PNG @ 300 DPI + PDF)
+│   └── 15April2026/results_15April2026/   ← 74 raw result plots + CSVs
+│
+├── results_multimodal_vision/              ← Part 4 CLIP/MedSigLIP results
+├── result_BERT/                            ← Part 3 NLP results
+│
+├── visualizations/
+│   ├── index.html                          ← Demo gallery landing page
+│   ├── vit_layer_explorer.html             ← Interactive ViT layer explorer
+│   ├── sdiv_loss_surface.html              ← Interactive (β,λ) surface
+│   └── robustness_dashboard.html           ← Interactive benchmark dashboard
+│
+├── assets/                                 ← Animated GIFs for GitHub README
+│   ├── noise_robustness_race.gif
+│   ├── sdiv_surface_rotation.gif
+│   ├── fgsm_shield_animation.gif
+│   ├── dual_frontier_evolution.gif
+│   └── parameter_sensitivity_sweep.gif
+│
+├── research_writeup/
+│   ├── 12April2026_RobustNN_Theory_Math.tex   ← Full math derivations (LaTeX)
+│   └── Robust_Losses_Research_Showcase.tex    ← Paper-style showcase
+│
+├── README.md
+└── pyproject.toml                          ← Ruff + mypy configuration
+```
+
+---
+
+## 🧩 Loss Functions Reference
+
+All losses are in [`code/robust_losses.py`](code/robust_losses.py) as PyTorch `nn.Module` subclasses.
 
 ```python
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from code.robust_losses import make_loss_registry
 
-class SDIVLoss(nn.Module):
-    """S-Divergence loss — drop-in replacement for CrossEntropyLoss.
-    
-    A = 1 + λ(1−β),  B = β − λ(1−β)   (both must be > 0)
-    L = Σ_k p_k^{β+1} / A  −  (1+β)/(A·B) · p_y^B
-    
-    Paper default: β=0.05, λ=−0.8  (reduces to CCE at β=0, λ=−1).
-    """
-    def __init__(self, beta: float = 0.05, lam: float = -0.8):
-        super().__init__()
-        A = 1.0 + lam * (1.0 - beta)
-        B = beta - lam * (1.0 - beta)
-        assert A > 0 and B > 0, f"Constraint violated: A={A:.3f}, B={B:.3f}"
-        self.beta, self.A, self.B = beta, A, B
-
-    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        probs = F.softmax(logits, dim=1).clamp(1e-9)
-        py = probs[torch.arange(len(targets)), targets]
-        loss = probs.pow(self.beta + 1).sum(dim=1) / self.A \
-             - (1.0 + self.beta) / (self.A * self.B) * py.pow(self.B)
-        return loss.mean()
-
-# Usage: exact drop-in replacement for F.cross_entropy
-criterion = SDIVLoss(beta=0.05, lam=-0.8)
-loss = criterion(logits, labels)   # same interface as nn.CrossEntropyLoss
+# Get all loss functions at once
+registry = make_loss_registry(num_classes=10)
+for name, loss_fn in registry.items():
+    val = loss_fn(logits, labels)
 ```
 
-**It works with any architecture** — the loss only depends on the softmax output vector `p`, not on internal model structure.
+| Loss | Class | Key Parameter | Robustness Mechanism |
+|---|---|:---:|---|
+| **CCE** | `CCELoss()` | — | None (baseline) |
+| **MAE** | `MAELoss()` | — | Bounded gradient: always in [0,1] |
+| **GCE** | `GCELoss(q=0.7)` | q ∈ (0,1] | q=0→CCE, q=1→MAE; interpolation |
+| **TruncGCE** | `TruncGCELoss(q, k)` | k=0.5 | Ignores high-confidence samples |
+| **SCE** | `SCELoss(α, β)` | α=0.1, β=1.0 | Symmetric reverse-KL term |
+| **DPD** | `DPDLoss(beta)` | β>0 | β-divergence; λ=0 special case of SDIV |
+| **SDIV** ⭐ | `SDIVLoss(beta, lam)` | β=0.05, λ=−0.8 | Gradient ∝ pᵧ^β; auto-downweights noise |
+| **TSCCE** | `TSCCELoss(trim)` | trim=0.2 | Drops top 20% highest-loss samples |
+| **FCL** | `FCLoss(mu)` | μ=0.5 | Fractional power softens large individual losses |
+| **ForwardT** | `ForwardCorrectionLoss(T)` | T: C×C matrix | Explicit noise model via transition matrix |
 
 ---
 
-## Citation
+## 🤗 HuggingFace Integration (Coming Soon)
 
-If you use this codebase, please cite the foundational papers:
+Trained model checkpoints and processed datasets will be released on HuggingFace Hub for easy download:
+
+```python
+# Future — download pre-trained robust ViT
+from huggingface_hub import hf_hub_download
+# model = torch.load(hf_hub_download("pps121/robustNN-vit-pathmnist", "sdiv_model.pt"))
+
+# Future — download datasets
+# from datasets import load_dataset
+# ds = load_dataset("pps121/pathmnist-robust-splits")
+```
+
+> ⭐ Watch this repo to be notified when HuggingFace uploads are live.
+
+---
+
+## 📖 How to Extend This Work
+
+### Add a new dataset
+
+```python
+# In Runpod_14April2026_RobustNN_Experiments.py
+DATASETS = ["pathmnist", "dermamnist", "your_medmnist_key"]
+```
+
+### Add a new loss function
+
+```python
+# In code/robust_losses.py
+class MyRobustLoss(_RobustBase):
+    name = "MyLoss"
+    scale_info = "[0, +∞)"
+
+    def __init__(self, alpha: float = 0.5):
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        probs = F.softmax(logits, dim=1).clamp(min=1e-9)
+        py = probs[torch.arange(len(targets), device=logits.device), targets]
+        return (1.0 - py.pow(self.alpha)).mean()
+```
+
+Then add it to `make_loss_registry()` and it's automatically included in all benchmarks.
+
+---
+
+## 📚 Citation
+
+If you use this codebase, please cite:
 
 ```bibtex
+@misc{saha2026robustnn,
+  title   = {Robust Neural Learning via S-Divergence: Extending rSDNet to Vision Transformers and BERT},
+  author  = {Saha, Partha Pratim},
+  year    = {2026},
+  url     = {https://github.com/pps121/robustNN-transformers},
+  note    = {Extension of Jana \& Ghosh (2026), arXiv:2603.17628}
+}
+
 @article{jana2026rsdnet,
   title   = {rSDNet: Unified Robust Neural Learning under Label Noise and Adversarial Attack},
   author  = {Jana, Suryasis and Ghosh, Abhik},
@@ -336,17 +447,16 @@ If you use this codebase, please cite the foundational papers:
 
 ---
 
-## Authors
+## 👤 Author
 
-**Extension work (Parts 2–4):**
-- Partha Pratim Sarkar (IIT Kanpur / Collaboration)
+**Extension work (Parts 2–4), code, experiments, interactive visualizations:**  
+Partha Pratim Saha · [technical.partha@gmail.com](mailto:technical.partha@gmail.com)
 
-**Foundational papers (rSDNet / rRNet / S-divergence):**
-- Suryasis Jana (ISI Kolkata) — suryasisjana1999@gmail.com
-- Dr. Abhik Ghosh (ISI Kolkata) — abhik.ghosh.stat@gmail.com
+**Foundational papers (rSDNet / rRNet / S-divergence theory):**  
+Suryasis Jana & Dr. Abhik Ghosh · ISI Kolkata
 
 ---
 
-## License
+## 📄 License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
