@@ -1,24 +1,30 @@
 # Robust Neural Learning via S-Divergence
 
-This repository studies robust neural learning with S-Divergence losses across three settings: **(1) Vision Transformers on medical imaging, (2) BERT-based clinical NLP, and (3) zero-shot multimodal medical classification**. It contains experiment code, curated results, raw outputs, and browser-based interactive visualizations.
+This repository evaluates S-Divergence-based robust training in three transformer-oriented settings: **(1) Vision Transformers on medical imaging, (2) BERT-based clinical NLP, and (3) zero-shot multimodal medical classification**. It includes experiment scripts, result artifacts, curated documentation, and browser-based interactive visualizations.
 
-## What is in this repository?
+The repository is intended as an empirical extension of robust-loss ideas from prior S-Divergence / rSDNet work to transformer-based settings. Where theoretical properties such as Fisher consistency or Bayes optimality are discussed, those should be understood as properties established in the cited prior literature rather than proved within this repository.
 
-The repository extends robust-loss ideas from rSDNet to transformer-based settings and organizes the work into three experiment families:
+## Scope of the repository
 
-1. **ViT on MedMNIST image classification**
+The work is organized into three experiment families:
+
+1. **Vision Transformer experiments on medical imaging**
    - datasets: PathMNIST, DermaMNIST
-   - robustness settings: label noise and FGSM adversarial perturbations
-2. **BERT on clinical NLP**
-   - robustness under noisy supervision in text classification
+   - evaluation settings: label noise and FGSM perturbations
+2. **BERT experiments on clinical NLP**
+   - robustness-oriented text classification experiments under noisy supervision
 3. **CLIP / MedSigLIP zero-shot evaluation**
-   - medical-domain multimodal evaluation
+   - medical-domain multimodal comparison on reported datasets
 
-## Main findings
+This repository is strongest as an experiment and results repository. It should not be read as establishing universal robustness claims beyond the datasets, architectures, and perturbation settings explicitly evaluated here.
 
-- On **PathMNIST label-noise experiments**, several robust losses remain stable, while **MAE can collapse strongly** at intermediate noise rates.
-- On **DermaMNIST FGSM experiments**, **SDIV, MAE, and GCE** remain nearly invariant across the tested perturbation budgets, while standard cross-entropy degrades substantially.
-- In **zero-shot medical evaluation**, **MedSigLIP** outperforms generic CLIP on the reported datasets.
+## Main observations from the reported experiments
+
+- In the reported **PathMNIST label-noise experiments**, several robust losses remain comparatively stable across the tested noise levels, while **MAE shows a substantial drop** at intermediate noise rates.
+- In the reported **DermaMNIST FGSM experiments**, **SDIV, MAE, and GCE** show no observed accuracy drop across the tested epsilon values in the stored summaries, while standard cross-entropy degrades substantially.
+- In the reported **zero-shot medical evaluation**, **MedSigLIP** outperforms generic CLIP on the included datasets.
+
+These observations should be interpreted as results for the reported experimental setup, not as general guarantees.
 
 ## Repository map
 
@@ -35,9 +41,9 @@ robustNN-transformers/
 └── pyproject.toml
 ```
 
-Important files:
+Key files:
 
-- `code/robust_losses.py` — robust loss implementations
+- `code/robust_losses.py` — robust loss implementations used in the repository
 - `code/vision_transformer.py` — Vision Transformer model
 - `code/Runpod_14April2026_RobustNN_Experiments.py` — main ViT experiment runner
 - `code/part3_BERT_Robust_NLP_Experiments.py` — BERT experiment runner
@@ -45,8 +51,9 @@ Important files:
 - `code/generate_publication_plots.py` — static figure generation
 - `code/generate_gifs.py` — GIF generation for README/demo assets
 
-For a clearer overview of how these pieces fit together, see:
+Documentation:
 - `docs/repository_reorganization_plan.md`
+- `docs/figure_guide.md`
 
 ## Reproducing the main experiments
 
@@ -96,11 +103,11 @@ python3 code/generate_publication_plots.py
 python3 code/generate_gifs.py
 ```
 
-## Core result summary
+## Compact result summary
 
 ### ViT on medical imaging
 
-#### PathMNIST label-noise robustness
+#### PathMNIST label-noise results
 
 | Loss | η=0% | η=10% | η=20% | η=30% | η=40% |
 |:---|:---:|:---:|:---:|:---:|:---:|
@@ -110,7 +117,7 @@ python3 code/generate_gifs.py
 | SDIV | 82.6 | 82.7 | 81.9 | 81.0 | 82.0 |
 | FCL | 83.6 | 83.2 | 82.3 | 83.3 | 83.0 |
 
-#### DermaMNIST FGSM robustness
+#### DermaMNIST FGSM results
 
 | Loss | ε=0 | ε=1/255 | ε=2/255 | ε=4/255 | ε=8/255 |
 |:---|:---:|:---:|:---:|:---:|:---:|
@@ -120,7 +127,7 @@ python3 code/generate_gifs.py
 | SDIV | 66.9 | 66.9 | 66.9 | 66.9 | 66.9 |
 | FCL | 72.8 | 65.3 | 59.1 | 47.6 | 29.0 |
 
-### Multimodal zero-shot evaluation
+### Multimodal zero-shot summary
 
 | Dataset | MedSigLIP | CLIP |
 |---|:---:|:---:|
@@ -136,7 +143,7 @@ Open these directly in the browser:
 - `visualizations/sdiv_loss_surface.html`
 - `visualizations/robustness_dashboard.html`
 
-These demos are intended as explanatory companions to the experiments, not replacements for the main quantitative results.
+These visualizations are intended as explanatory companions to the experiments. Some are direct summaries of reported experimental results, while others are conceptual or illustrative views designed to help readers interpret model behavior. They should therefore be read together with the code, reported outputs, and figure documentation rather than as standalone evidence.
 
 ## Current cleanup direction
 
@@ -147,10 +154,13 @@ The repository is being reorganized to better separate:
 - reusable implementation code
 - interactive demos
 
-The cleanup plan is documented in:
+See:
 - `docs/repository_reorganization_plan.md`
+- `docs/figure_guide.md`
 
 ## Citation
+
+If you use this repository, please cite the relevant empirical or theoretical sources appropriately.
 
 ```bibtex
 @misc{saha2026robustnn,
