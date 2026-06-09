@@ -1,28 +1,24 @@
 ## Intuition:
 
-> **All three papers solve the same problem: standard neural networks use the KL divergence (= cross-entropy or MSE) as their loss. KL divergence is sensitive to even just one bad data point. The papers replace it with a more forgiving divergence that automatically "soft-ignores" suspicious data points during training — without having to explicitly find or remove those bad points.**
+> **Standard neural networks use the KL divergence (= cross-entropy or MSE) as their loss. KL divergence is sensitive to even just one bad data point. The papers replace it with a more forgiving divergence that automatically "soft-ignores" suspicious data points during training — without having to explicitly find or remove those bad points.**
 
 The papers also talk about: (a) which kind of "bad data" is being tolerated, (b) which divergence family is being used, and (c) which type of neural network (regression vs. classification).
 
 ---
 
-## Paper 1: `β-divergences.pdf`
-### "Provably robust learning of regression neural networks using β-divergences"
-*— Abhik Ghosh & Suryasis Jana, ISI Kolkata. arXiv:2602.08933, February 2026.*
+## `β-divergence` : 
 
----
-
-### What problem does it solve?
+**Issue : non-robustness to label noise / data contamination**
 
 **Setting:** Regression neural network (predicts a continuous number, like predicting house price or sensor reading from features) we train it with mean squared error.
 
-**The bug:** MSE sums up `(prediction - true_value)²` for all data points. If even one data point has a corrupted label (e.g., 99999 instead of 99), that squared error completely dominates the training and destroys your model. This is called **non-robustness to label noise / data contamination**.
+**The bug:** MSE sums up `(prediction - true_value)²` for all data points. If even one data point has a corrupted label (e.g., 99999 instead of 99), that squared error completely dominates the training and destroys your model. Thats why **non-robustness to label noise / data contamination**.
 
 **Current solutions are weak:** Methods like clipping, winsorizing, or Huber loss help a little, but either have no theoretical guarantees, or are limited in scope, or require you to manually tune thresholds to flag outliers.
 
 ---
 
-### Claim of recent papers: 
+### Claim : 
 
 **rRNet** (robust Regression Network): swap out MSE for the **β-divergence (Density Power Divergence or DPD)** as the training objective.
 
@@ -57,7 +53,7 @@ Because you're simultaneously estimating **θ** (network weights) and **σ** (er
 
 ### What are the theoretical guarantees?
 
-Three big ones you can remember as **"BIB"**:
+**"BIB"**:
 
 1. **B**ounded Influence Function (local robustness): The influence function measures "how much does one slightly perturbed data point change the learned model?" For β > 0, this is bounded — one bad point can only push the model a bounded amount. For β = 0 (standard MSE), it is unbounded.
 
@@ -65,35 +61,25 @@ Three big ones you can remember as **"BIB"**:
 
 3. **B**reakdown Point = 50% (global robustness): The **breakdown point** is the fraction of data that can be corrupted before the model estimate completely fails. They prove rRNet achieves the optimal **50% asymptotic breakdown point** for all β ∈ (0,1]. This means: up to half your training data can be corrupted and the model still works! Standard MSE training has a breakdown point of essentially 0% (one extreme outlier is all it takes).
 
----
-
-### How to remember Paper 1:
-
 > **"Regression + MSE is fragile. Swap MSE for DPD (β-divergence). One β knob. β=0 is MSE. β>0 is robust. Provably tolerates up to 50% corrupted data."**
 
 ---
 
-## Paper 2: `s_divergence.pdf`
-### "A generalized divergence for statistical inference"
-*— Abhik Ghosh, Ian Harris, Avijit Maji, A. Basu, L. Pardo. Bernoulli 23(4A), 2017.*
+## `s_divergence`
 
----
-
-### Why does this paper exist?
-
-Before rSDNet (Paper 3), the world had two families of robust divergences:
+Before rSDNet, we had two families of robust divergences:
 1. **Power Divergence (PD)** family — great for discrete models, but requires kernel density estimation for continuous data (messy, bandwidth selection problem)
 2. **Density Power Divergence (DPD)** family — the β-divergence from Paper 1 — clean, closed-form, no kernel smoothing needed
 
-**The problem discovered:** In some contamination scenarios, the best estimator lies **neither** in PD nor DPD. There is a "gap" between them. These families are 1-dimensional curves in the space of possible divergences, and the best divergence might be somewhere in the 2D plane between them.
+**The problem:** In some contamination scenarios, the best estimator lies **neither** in PD nor DPD. There is a "gap" between them. These families are 1-dimensional curves in the space of possible divergences, and the best divergence might be somewhere in the 2D plane between them.
 
-**The solution:** This paper introduces the **S-divergence**, a 2-parameter **superfamily** that contains both PD and DPD as special cases:
+**The solution:** **S-divergence** uses a 2-parameter **superfamily** that contains both PD and DPD as special cases:
 
 $$S_{(\alpha,\lambda)}(g,f) = \frac{1}{A}\int f^{1+\alpha} - \frac{1+\alpha}{AB}\int f^B g^A + \frac{1}{B}\int g^{1+\alpha}$$
 
 where **A = 1 + λ(1−α)** and **B = α − λ(1−α)**.
 
-**Special cases (memorize this table):**
+**Special cases :**
 
 | α | λ | What it gives |
 |---|---|---------------|
@@ -126,19 +112,11 @@ This is a theoretical warning: **standard influence function analysis is insuffi
 
 ---
 
-### How to remember Paper 2:
-
 > **"S-divergence is the 2-parameter family that unifies PD and DPD. Think of it as a 2D map where DPD (β-divergence) is a road running through the middle. The best route through contaminated terrain might be off that road. (α, λ) are the GPS coordinates."**
 
 ---
 
-## Paper 3: `rSDNet.pdf`
-### "rSDNet: Unified Robust Neural Learning against Label Noise and Adversarial Attacks"
-*— Suryasis Jana & Abhik Ghosh, ISI Kolkata. arXiv:2603.17628, March 2026. [THE KEY PAPER for your collaboration]*
-
----
-
-### What problem does it solve?
+## `rSDNet`
 
 **Setting:** Classification neural network (output: probabilities over K classes via softmax, trained with cross-entropy / CCE loss).
 
@@ -192,7 +170,7 @@ Think of it as: **"the loss function looks at itself (the model's probabilities)
 
 ### Theoretical guarantees
 
-Four results, remember as **"FCRB"**:
+Four results as **"FCRB"**:
 
 1. **F**isher Consistency: At the population level, rSDNet's minimizer gives exactly the true class probabilities `p*(x)` — it's an unbiased estimator. Not true for MAE loss or other ad-hoc robust losses.
 
@@ -228,14 +206,11 @@ Tested on **MNIST, Fashion-MNIST, CIFAR-10** against these baselines:
 The **CNN architecture was used for CIFAR-10**, showing rSDNet works with convolutional models (not just MLP). This is the jumping-off point for your collaboration.
 
 ---
-
-### How to remember Paper 3:
-
 > **"Classification + CCE is fragile to label noise AND adversarial attacks. rSDNet swaps CCE for S-divergence loss. Two knobs (β, λ). Down-weights mislabeled/adversarial samples using model's own probabilities. Theoretically sound: Fisher consistent, Bayes optimal, robust. Tested on MNIST/FashionMNIST/CIFAR-10 with MLP and CNN. Code in the git repo for MLP. Your collaboration extends this to CNN and Transformer architectures."**
 
 ---
 
-## The Grand Unifying Picture: How All Three Papers Connect
+## The Grand Unifying Picture:
 
 ```
         [Paper 2: S-divergence (2017)]
@@ -292,9 +267,6 @@ The **CNN architecture was used for CIFAR-10**, showing rSDNet works with convol
 - *PGD (Projected Gradient Descent):* iterated FGSM steps, staying within an ε-ball — stronger attack
 
 ---
-
-## Why This Should Excite You (CS + AI Safety Perspective)
-
 ### Connection to AI Safety & Alignment
 
 Even though the group frames this in classical statistics, the problems they solve are **core to AI safety**:
@@ -334,11 +306,11 @@ The rSDNet paper already uses CNN for CIFAR-10. The existing GitHub code is MLP-
 
 ---
 
-## The GitHub Code: What It Does and What You'll Add
+## Code:
 
 **Repo:** https://github.com/Suryasis124/Robust-NN-learning
 
-**What's there (MLP for rSDNet):**
+**MLP for rSDNet:**
 ```python
 # Conceptually, the core change is replacing:
 loss = F.cross_entropy(logits, labels)
@@ -367,10 +339,7 @@ def sd_loss(p, y_onehot, beta, lam):
 
 ---
 
-## How To Write To Them: Key Points to Convey
-
-*Suggested message structure for your email to Subho, Anand, and Abhik:*
-
+## 
 1. **Acknowledge the core framework:** "I understand that rSDNet replaces cross-entropy (= KL divergence → minimum KL estimation) with the S-divergence family parameterized by (β, λ), giving a 2D generalization of DPD. The β-divergence paper (rRNet) does the same for regression. Both are grounded in the theoretical S-divergence superfamily from the 2017 Bernoulli paper."
 
 2. **Show you understand the mechanism:** "The robustness arises because the SD-loss down-weights the gradient contribution of each sample proportionally to `p_j^β` — observations the model is uncertain about OR that have inconsistent labels get automatically discounted, with no explicit outlier detection needed."
