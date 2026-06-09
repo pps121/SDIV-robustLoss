@@ -3,9 +3,6 @@
 <img src="assets/noise_robustness_race.gif" width="48%" alt="Label noise robustness race: all 10 loss functions across noise levels"/>
 <img src="assets/fgsm_shield_animation.gif" width="48%" alt="FGSM adversarial attack: SDIV holds while CCE collapses"/>
 
-<img src="assets/sdiv_surface_rotation.gif" width="48%" alt="S-divergence (β,λ) accuracy surface rotating"/>
-<img src="assets/dual_frontier_evolution.gif" width="48%" alt="Clean-robust Pareto frontier building loss-by-loss"/>
-
 # Robust Neural Learning via S-Divergence
 ### Extending rSDNet to Vision Transformers & BERT — with Interactive 3D Visualizations
 
