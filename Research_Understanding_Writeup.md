@@ -243,9 +243,9 @@ The **CNN architecture was used for CIFAR-10**, showing rSDNet works with convol
 
 ---
 
-## Concepts That Are New To You: A Quick Glossary
+## Concepts :
 
-**Data Contamination:** Your training data has some percentage of bad samples. Could be: wrong labels (annotation errors, adversarial examples), corrupted features (sensor noise, JPEG artifacts), or outliers in the target values.
+**Data Contamination:**  training data has some percentage of bad samples. Could be: wrong labels (annotation errors, adversarial examples), corrupted features (sensor noise, JPEG artifacts), or outliers in the target values.
 
 **Label Noise / Noisy Labels:** Some fraction η of training labels are wrong. Types:
 - *Uniform noise:* wrong label is randomly chosen from other classes (Paper 3 focuses here)
