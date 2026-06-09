@@ -2,8 +2,6 @@
 
 > **Standard neural networks use the KL divergence (= cross-entropy or MSE) as their loss. KL divergence is sensitive to even just one bad data point. The papers replace it with a more forgiving divergence that automatically "soft-ignores" suspicious data points during training — without having to explicitly find or remove those bad points.**
 
-The papers also talk about: (a) which kind of "bad data" is being tolerated, (b) which divergence family is being used, and (c) which type of neural network (regression vs. classification).
-
 ---
 
 ## `β-divergence` : 
