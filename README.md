@@ -34,7 +34,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 | Emotion NLP | 6-class BERT | 57.25% | 57.80% | — | GCE 58.20% |
 | PubMedQA NLP | 3-class BERT | 56.00% | 55.33% | — | TruncGCE 58.00% |
 
-⚠ Default λ=−0.8 collapses to majority class on imbalanced DermaMNIST — see Figure 3.
+⚠ Default λ=−0.8 collapses to majority class on imbalanced DermaMNIST
 
 **PathMNIST AUNRC** (noise robustness area): FCL 0.3321 > SCE 0.3313 > TPDD-CCE 0.3293 > **SDIV 0.3279** > CCE 0.3269
 
@@ -51,7 +51,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F03 — DermaMNIST: λ=−0.8 Collapses; Tuned λ=−0.4 Recovers
+### DermaMNIST: λ=−0.8 Collapses; Tuned λ=−0.4 Recovers
 
 > **Finding**: The A-coefficient A=1+λ(1−β)=0.24 at default parameters amplifies the
 > sum-term gradient 4.2×, starving minority-class gradients. This is a **parameterisation
@@ -62,7 +62,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F07 — SDIV (β, λ) Grid: Phase Transition on Imbalanced Data
+### SDIV (β, λ) Grid: Phase Transition on Imbalanced Data
 
 > **Finding**: PathMNIST shows a smooth surface — any (β, λ) combination learns.
 > DermaMNIST shows a sharp phase transition: λ=−0.80 always degenerates.
@@ -72,7 +72,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F02 — PathMNIST Noise: All Robust Losses Maintain >80% at 40% Corruption
+### PathMNIST Noise: All Robust Losses Maintain >80% at 40% Corruption
 
 > **Finding**: SDIV degrades only −0.6 pp from η=0 to η=40%, matching CCE.
 > MAE shown separately — gradient instability causes collapse-recovery pattern.
@@ -81,7 +81,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F08 — AUNRC Ranking: Quantifying Noise Robustness
+### AUNRC Ranking: Quantifying Noise Robustness
 
 > **Finding**: On PathMNIST, FCL > SCE > TPDD-CCE > SDIV > CCE (all within 1.3 pp).
 > On DermaMNIST, SDIV default collapses to near-majority AUNRC. ForwardT excluded
@@ -91,7 +91,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F05 — PathMNIST FGSM: ALL Losses Collapse Under Strong Attack
+### PathMNIST FGSM: ALL Losses Collapse Under Strong Attack
 
 > **Finding**: No loss function provides genuine FGSM robustness. All methods drop
 > from ≈80% to <18% at ε=8/255. **Adversarial training is the correct remedy** —
@@ -101,7 +101,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 
 ---
 
-### F10 — Master Summary: 4 Key Findings
+### Master Summary: 4 Key Findings
 
 ![Master summary](plots_results/publication_final/F10_master_summary.png)
 
@@ -137,7 +137,7 @@ archive/                          ← Superseded code and early writeups
 
 ---
 
-## Architecture (paper-exact, §4)
+## Architecture
 
 | Parameter | Value |
 |-----------|-------|
@@ -152,7 +152,7 @@ archive/                          ← Superseded code and early writeups
 
 ---
 
-## Reproducing Experiments
+## Experiments
 
 ```bash
 # Install dependencies
