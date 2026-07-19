@@ -1,181 +1,175 @@
-# Robust Neural Learning via S-Divergence
+# Robust Neural Classification via S-Divergence (rSDNet)
 
-This repository evaluates S-Divergence-based robust training in three transformer-oriented settings: **(1) Vision Transformers on medical imaging, (2) BERT-based clinical NLP, and (3) zero-shot multimodal medical classification**. It includes experiment scripts, result artifacts, curated documentation, and browser-based interactive visualizations.
+**Paper**: *No Unique Minimizer, No Problem: On the Consistency of Robust Neural Classifiers*  
+**Theory by**: Subho Majumdar (IIM Bangalore) · Anand Deo (IIM Bangalore) · Abhik Ghosh (ISI Calcutta)  
+**Experiments by**: Partha P. Saha  
+**Branch**: `partha-fresh`
 
-The repository is intended as an empirical extension of robust-loss ideas from prior S-Divergence / rSDNet work to transformer-based settings. Where theoretical properties such as Fisher consistency or Bayes optimality are discussed, those should be understood as properties established in the cited prior literature rather than proved within this repository.
+---
 
-## Scope of the repository
+## Abstract
 
-The work is organized into three experiment families:
+Neural classifiers trained by cross-entropy minimisation are highly sensitive to label noise and adversarial contamination. This repository implements **rSDNet** — a unified robust neural training framework based on the **S-divergence family** — and provides reproducible experiments on vision and clinical NLP benchmarks confirming the paper's theoretical claims. The key theoretical result is a consistency theorem requiring no identifiability assumption: empirical S-divergence minimisers converge to the population-optimal equivalence class Θ₀ under mild regularity (Theorem 1), and limit points of the training algorithm are stationary points of the empirical objective (Theorem 2).
 
-1. **Vision Transformer experiments on medical imaging**
-   - datasets: PathMNIST, DermaMNIST
-   - evaluation settings: label noise and FGSM perturbations
-2. **BERT experiments on clinical NLP**
-   - robustness-oriented text classification experiments under noisy supervision
-3. **CLIP / MedSigLIP zero-shot evaluation**
-   - medical-domain multimodal comparison on reported datasets
+---
 
-This repository is strongest as an experiment and results repository. It should not be read as establishing universal robustness claims beyond the datasets, architectures, and perturbation settings explicitly evaluated here.
+## Key Results
 
-## Main observations from the reported experiments
+| Dataset | CCE | SDIV (default λ=−0.8) | SDIV (optimised λ=−0.4) | Best loss |
+|---------|-----|----------------------|------------------------|-----------|
+| MNIST (clean) | 98.22% | 98.01% | — | FCL 98.46% |
+| CIFAR-10 (clean) | 60.56% | 55.06% | — | TPDD-CCE 61.16% |
+| PathMNIST (clean) | 83.02% | 82.60% | **84.11%** (β=0.05) | FCL 83.61% |
+| DermaMNIST (clean) | 73.22% | 66.88%† | **73.32%** (β=0.10) | CCE 73.22% |
+| Emotion NLP | 57.25% | 57.80% | — | GCE 58.20% |
+| PubMedQA NLP | 56.00% | 55.33% | — | TruncGCE 58.00% |
 
-- In the reported **PathMNIST label-noise experiments**, several robust losses remain comparatively stable across the tested noise levels, while **MAE shows a substantial drop** at intermediate noise rates.
-- In the reported **DermaMNIST FGSM experiments**, **SDIV, MAE, and GCE** show no observed accuracy drop across the tested epsilon values in the stored summaries, while standard cross-entropy degrades substantially.
-- In the reported **zero-shot medical evaluation**, **MedSigLIP** outperforms generic CLIP on the included datasets.
+†Default λ=−0.8 causes majority-class collapse on imbalanced DermaMNIST; optimised λ=−0.4 resolves this (see §Critical Findings).
 
-These observations should be interpreted as results for the reported experimental setup, not as general guarantees.
+**MNIST label-noise robustness** (η=40%): SDIV −1.5 pp vs CCE −3.6 pp.  
+**PathMNIST AUNRC**: FCL 0.3321 > SCE 0.3313 > TPDD-CCE 0.3293 > SDIV 0.3279 > CCE 0.3269.
 
-## Repository map
+---
 
-```text
-robustNN-transformers/
-├── README.md
-├── code/                          # model, loss, and experiment scripts
-├── visualizations/                # browser-based interactive demos
-├── assets/                        # README figures / GIFs
-├── plots_results/                 # generated plots (currently mixed: curated + raw)
-├── result_BERT/                   # BERT experiment outputs
-├── results_multimodal_vision/     # multimodal experiment outputs
-├── docs/                          # repository and experiment documentation
-└── pyproject.toml
+## Repository Structure
+
+```
+src/
+  losses/robust_losses.py         # All 10 loss functions (PyTorch)
+  models/vision_transformer.py    # rSDNet-ViT (vanilla Transformer encoder)
+
+experiments/
+  vit_medmnist/run_vit.py         # ← CANONICAL experiment runner (vision)
+  bert_nlp/run_bert.py            # BERT NLP experiments
+  multimodal/run_multimodal.py    # CLIP / MedSigLIP zero-shot
+  plotting/generate_plots.py      # Publication-quality figure generation
+
+notebooks/
+  vit_exploration.ipynb           # Interactive ViT exploration
+  bert_exploration.ipynb          # Interactive BERT exploration
+
+results/
+  paper/
+    experiment_section.tex        # Full LaTeX experiment section (8 tables)
+    tables/                       # tab_setup, tab_clean_*, tab_noise_*, tab_fgsm,
+    │                             #   tab_sdiv_surface, tab_nlp
+    csvs/                         # Verified result CSVs (ground-truth numbers)
+    figures/                      # Publication PNG figures
+  visualizations/                 # Interactive HTML dashboards
+
+docs/
+  paper/                          # LaTeX sources (authoritative)
+  planning/master_plan.md
+
+dataset/                          # pathmnist.npz
+archive/                          # Superseded code, early writeups, stage snapshots
 ```
 
-Key files:
+---
 
-- `code/robust_losses.py` — robust loss implementations used in the repository
-- `code/vision_transformer.py` — Vision Transformer model
-- `code/Runpod_14April2026_RobustNN_Experiments.py` — main ViT experiment runner
-- `code/part3_BERT_Robust_NLP_Experiments.py` — BERT experiment runner
-- `code/part4_Multimodal_Vision_Robust_Experiments.py` — multimodal experiment runner
-- `code/generate_publication_plots.py` — static figure generation
-- `code/generate_gifs.py` — GIF generation for README/demo assets
+## Architecture (paper-exact, AAA_2026_RobustNN_Paper §4)
 
-Documentation:
-- `docs/repository_reorganization_plan.md`
-- `docs/figure_guide.md`
+| Parameter | Value |
+|-----------|-------|
+| Embedding dimension d | 64 |
+| Attention heads H | 4 |
+| FFN hidden dim | 128 |
+| Transformer layers L | 4 |
+| Dropout | 0.10 |
+| Patch size | 8×8 (images resized to 32×32 → 16 patches) |
+| Optimizer | Adam (η₀ = 1×10⁻³, β₁=0.9, β₂=0.999) |
+| Epochs / batch | 30 / 256 |
+| SDIV default (β, λ) | (0.05, −0.80); grid-search optimal (0.05–0.10, −0.40) |
 
-## Reproducing the main experiments
+---
 
-### 1. Installation
+## Reproducing Experiments
+
+### Prerequisites
 
 ```bash
-git clone https://github.com/pps121/robustNN-transformers.git
-cd robustNN-transformers
-
-conda create -n robustnn python=3.11 -y
-conda activate robustnn
-
-pip install "torch>=2.6" torchvision --index-url https://download.pytorch.org/whl/cu121
-pip install transformers datasets medmnist scikit-learn matplotlib seaborn pandas tqdm open_clip_torch imageio Pillow numpy
+pip install 'torch>=2.6' torchvision transformers datasets medmnist \
+            scikit-learn matplotlib seaborn pandas tqdm
 ```
 
-### 2. Vision Transformer experiments (PathMNIST / DermaMNIST)
+### Quick run (paper-exact defaults)
 
 ```bash
-# quick run
-python3 code/Runpod_14April2026_RobustNN_Experiments.py
+# Runs all 5 datasets with paper's d=64 config
+python experiments/vit_medmnist/run_vit.py
 
-# fuller run
-ROBUST_NN_QUICK_RUN=0 \
-ROBUST_NN_VIT_EPOCHS=100 \
-ROBUST_NN_DATASETS=pathmnist,dermamnist \
-python3 code/Runpod_14April2026_RobustNN_Experiments.py
+# Medical datasets only (faster):
+ROBUST_NN_DATASETS=pathmnist,dermamnist python experiments/vit_medmnist/run_vit.py
 ```
 
-### 3. BERT experiments
+### Experiment Batteries
+
+| Battery | Description | Paper §4 |
+|---------|-------------|----------|
+| A | Clean-data performance | Category A |
+| B | Uniform label noise η ∈ {0, 0.1, 0.2, 0.3, 0.4} | Category B |
+| C | FGSM adversarial ε ∈ {0, 1/255, 2/255, 4/255, 8/255} | Category C |
+| C2 | PGD adversarial (10-step, same ε grid); skip via `ROBUST_NN_SKIP_PGD=1` | — |
+| D | SDIV (β, λ) surface β∈{0.01,…,0.5} × λ∈{-0.8,-0.5,0.0} | Category D |
+| E | Asymmetric (pair-flip) label noise (same η grid) | — |
+
+### Reproduce larger April-2026 exploratory config (d=256)
 
 ```bash
-export HF_TOKEN="your_token_here"
-python3 code/part3_BERT_Robust_NLP_Experiments.py
+ROBUST_NN_D_MODEL=256 ROBUST_NN_HEADS=8 ROBUST_NN_FFN=512 \
+ROBUST_NN_LAYERS=6 ROBUST_NN_PATCH=4 ROBUST_NN_LR=3e-4 \
+  python experiments/vit_medmnist/run_vit.py
 ```
 
-### 4. Multimodal zero-shot experiments
+---
 
-```bash
-python3 code/part4_Multimodal_Vision_Robust_Experiments.py
-```
+## Loss Functions
 
-### 5. Regenerate publication plots
+| Name | Class | Reference |
+|------|-------|-----------|
+| CCE | `CCELoss` | Baseline |
+| MAE | `MAELoss` | Ghosh et al. 2017 |
+| GCE (q=0.7) | `GCELoss` | Zhang & Sabuncu 2018 |
+| TruncGCE | `TruncGCELoss` | Rusiecki 2019 |
+| SCE | `SCELoss` | Wang et al. 2019 |
+| TPDD-CCE | `DPDLoss` | Basu et al. 1998 |
+| TSCCE | `TSCCELoss` | Jana & Ghosh 2026 (λ=0 special case) |
+| FCL (μ=0.5) | `FCLoss` | — |
+| RKLD | `RKLDLoss` | Reverse KL + uniform regulariser |
+| **SDIV (β, λ)** | `SDIVLoss` | **Proposed** — Jana & Ghosh 2026 |
+| ForwardT | `ForwardTLoss` | Patrini et al. 2017 (oracle T) |
 
-```bash
-python3 code/generate_publication_plots.py
-python3 code/generate_gifs.py
-```
+---
 
-## Compact result summary
+## Critical Findings
 
-### ViT on medical imaging
+### 1. SDIV Majority-Class Collapse (DermaMNIST)
+Default λ=−0.8 → A=1+λ(1−β)=0.24, amplifying the sum-term gradient 4.17×.
+This causes gradient starvation on minority classes → collapse to majority (66.88%).
+**Fix**: λ=−0.4 → A=0.62 → (β=0.10, λ=−0.40) achieves 73.32% = best on DermaMNIST.
 
-#### PathMNIST label-noise results
+### 2. DermaMNIST FGSM "Immunity" is an Artefact
+SDIV/MAE/GCE stay flat at 66.88% under all adversarial ε — because they predict a
+single class regardless of input. This is **not genuine adversarial robustness**.
+Among genuinely discriminative losses, TSCCE (Δ=−30.7 pp) and SCE (Δ=−24.4 pp)
+show the best true FGSM resilience vs CCE (Δ=−68.5 pp).
 
-| Loss | η=0% | η=10% | η=20% | η=30% | η=40% |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| CCE | 83.0 | 81.0 | 81.1 | 82.0 | 82.4 |
-| MAE | 78.5 | 48.8 | 42.7 | 44.0 | 72.4 |
-| GCE(q=0.7) | 82.2 | 83.0 | 81.5 | 81.2 | 81.6 |
-| SDIV | 82.6 | 82.7 | 81.9 | 81.0 | 82.0 |
-| FCL | 83.6 | 83.2 | 82.3 | 83.3 | 83.0 |
+### 3. No Loss Confers FGSM Robustness on PathMNIST
+All losses collapse catastrophically at ε=8/255 (CCE: 83.3%→17.6%, SDIV: 80.9%→15.9%).
+Adversarial training (Madry et al. 2018) is required for genuine FGSM robustness.
 
-#### DermaMNIST FGSM results
+### 4. Consistency Without Identifiability (Theory)
+Theorem 1 proves convergence of empirical SDIV minimisers to Θ₀ = {θ : gθ(x) = p₀(x)}
+without requiring Θ₀ to be a singleton — filling the key gap in prior rSDNet theory.
 
-| Loss | ε=0 | ε=1/255 | ε=2/255 | ε=4/255 | ε=8/255 |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| CCE | 72.3 | 61.6 | 52.2 | 39.9 | 22.7 |
-| MAE | 66.9 | 66.9 | 66.9 | 66.9 | 66.9 |
-| GCE(q=0.7) | 66.9 | 66.9 | 66.9 | 66.9 | 66.9 |
-| SDIV | 66.9 | 66.9 | 66.9 | 66.9 | 66.9 |
-| FCL | 72.8 | 65.3 | 59.1 | 47.6 | 29.0 |
+---
 
-### Multimodal zero-shot summary
+## References
 
-| Dataset | MedSigLIP | CLIP |
-|---|:---:|:---:|
-| PathMNIST | 23.0 | 18.2 |
-| DermaMNIST | 19.9 | 13.7 |
-
-## Interactive visualizations
-
-Open these directly in the browser:
-
-- `visualizations/index.html`
-- `visualizations/vit_layer_explorer.html`
-- `visualizations/sdiv_loss_surface.html`
-- `visualizations/robustness_dashboard.html`
-
-These visualizations are intended as explanatory companions to the experiments. Some are direct summaries of reported experimental results, while others are conceptual or illustrative views designed to help readers interpret model behavior. They should therefore be read together with the code, reported outputs, and figure documentation rather than as standalone evidence.
-
-## Current cleanup direction
-
-The repository is being reorganized to better separate:
-- curated paper figures
-- raw outputs
-- exploratory artifacts
-- reusable implementation code
-- interactive demos
-
-See:
-- `docs/repository_reorganization_plan.md`
-- `docs/figure_guide.md`
-
-## Citation
-
-If you use this repository, please cite the relevant empirical or theoretical sources appropriately.
-
-```bibtex
-@misc{saha2026robustnn,
-  title   = {Robust Neural Learning via S-Divergence: Extending rSDNet to Vision Transformers and BERT},
-  author  = {Saha, Partha Pratim},
-  year    = {2026},
-  url     = {https://github.com/pps121/robustNN-transformers},
-  note    = {Extension of Jana \& Ghosh (2026), arXiv:2603.17628}
-}
-```
-
-## Author
-
-**Extension work (Parts 2–4), code, experiments, and visualizations:**  
-Partha Pratim Saha
-
-**Foundational papers (rSDNet / rRNet / S-divergence theory):**  
-Suryasis Jana and Abhik Ghosh
+- Basu et al. (1998). *Biometrika* 85:549–559.
+- Ghosh et al. (2017). *Bernoulli* 23(4A):2746–2783.
+- Jana & Ghosh (2026). arXiv:2603.17628. [rSDNet]
+- Madry et al. (2018). ICLR.
+- Patrini et al. (2017). CVPR.
+- Zhang & Sabuncu (2018). NeurIPS.
+- Wang et al. (2019). ICCV.

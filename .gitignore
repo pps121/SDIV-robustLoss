@@ -28,3 +28,6 @@ build/
 dist/
 *.egg-info/
 _stage_*/
+.codebuddy
+dataset/*.npz
+dataset/*.h5
