@@ -1,14 +1,6 @@
-# Robust Neural Classification via S-Divergence (rSDNet)
-
-**Paper**: *No Unique Minimizer, No Problem: On the Consistency of Robust Neural Classifiers*  
-**Theory**: Subho Majumdar · Anand Deo (IIM Bangalore) · Abhik Ghosh (ISI Calcutta)  
-**Experiments**: Partha P. Saha  
-**Branch**: `partha-fresh`  
-**Repository**: [pps121/robustNN-transformers](https://github.com/pps121/robustNN-transformers/tree/partha-fresh)
+# Robust Neural Classification
 
 ---
-
-## What This Paper Proves
 
 Standard neural classifiers fail under label noise and adversarial contamination.
 This work introduces **rSDNet** — training with S-divergence loss — and proves:
