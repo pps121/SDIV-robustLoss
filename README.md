@@ -55,7 +55,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > **Finding**: SDIV achieves within 1–2% of the best loss on 3/4 datasets. DermaMNIST with
 > default λ=−0.8 collapses (A-coefficient instability). Tuned λ=−0.4 recovers to 73.3%.
 
-![Clean accuracy all datasets](results/paper/figures/F01_clean_accuracy_all_datasets.png)
+![Clean accuracy all datasets](plots_results/publication_final/F01_clean_accuracy_all_datasets.png)
 
 ---
 
@@ -66,7 +66,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > failure, not a theory failure** — Theorem 1 guarantees convergence to Θ₀ which is
 > reachable with correct λ.
 
-![DermaMNIST collapse and recovery](results/paper/figures/F03_noise_dermamnist_collapse.png)
+![DermaMNIST collapse and recovery](plots_results/publication_final/F03_noise_dermamnist_collapse.png)
 
 ---
 
@@ -76,7 +76,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > DermaMNIST shows a sharp phase transition: λ=−0.80 always degenerates.
 > Optimal region: β∈[0.05, 0.10], λ∈[−0.40, 0.00].
 
-![SDIV parameter grid](results/paper/figures/F07_sdiv_grid.png)
+![SDIV parameter grid](plots_results/publication_final/F07_sdiv_grid.png)
 
 ---
 
@@ -85,7 +85,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > **Finding**: SDIV degrades only −0.6 pp from η=0 to η=40%, matching CCE.
 > MAE shown separately — gradient instability causes collapse-recovery pattern.
 
-![PathMNIST noise robustness](results/paper/figures/F02_noise_pathmnist.png)
+![PathMNIST noise robustness](plots_results/publication_final/F02_noise_pathmnist.png)
 
 ---
 
@@ -95,7 +95,7 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > On DermaMNIST, SDIV default collapses to near-majority AUNRC. ForwardT excluded
 > (requires oracle noise matrix).
 
-![AUNRC ranking](results/paper/figures/F08_aunrc_ranking.png)
+![AUNRC ranking](plots_results/publication_final/F08_aunrc_ranking.png)
 
 ---
 
@@ -105,13 +105,13 @@ amplifying the gradient 4.2× and collapsing to the majority class. Use $\lambda
 > from ≈80% to <18% at ε=8/255. **Adversarial training is the correct remedy** —
 > this is orthogonal to the consistency theorem's claims.
 
-![PathMNIST FGSM](results/paper/figures/F05_fgsm_pathmnist.png)
+![PathMNIST FGSM](plots_results/publication_final/F05_fgsm_pathmnist.png)
 
 ---
 
 ### F10 — Master Summary: 4 Key Findings
 
-![Master summary](results/paper/figures/F10_master_summary.png)
+![Master summary](plots_results/publication_final/F10_master_summary.png)
 
 ---
 

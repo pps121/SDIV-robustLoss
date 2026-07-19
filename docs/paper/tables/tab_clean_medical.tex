@@ -1,0 +1,39 @@
+% ============================================================================
+%  TABLE: Clean-data accuracy — PathMNIST and DermaMNIST
+%  Source: plots_results/15April2026/results_15April2026/pathmnist_noise_results.csv
+%          plots_results/15April2026/results_15April2026/dermamnist_noise_results.csv
+%  Values taken at noise_rate=0.0, seed=42.
+%  ‡ DermaMNIST majority-class prevalence ≈ 66.88%; losses at this value
+%    are predicting the majority class (degenerate solution).
+% ============================================================================
+
+\begin{table}[t]
+\centering
+\caption{Test accuracy (\%) on \textbf{PathMNIST} (9-class) and
+\textbf{DermaMNIST} (7-class) under clean labels ($\eta{=}0$, seed~42).
+Best result per dataset in \textbf{bold}; second-best \underline{underlined}.
+$^\ddagger$Values at 66.88\% equal the DermaMNIST majority-class baseline
+and indicate a degenerate (constant-class) predictor; see Section~\ref{sec:clean}.}
+\label{tab:clean_medical}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Loss} & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
+\midrule
+CCE              & 83.02             & \underline{73.22}   \\
+MAE              & 78.50             & 66.88$^\ddagger$    \\
+GCE ($q{=}0.7$)   & 82.24             & 66.93$^\ddagger$    \\
+TruncGCE         & 78.20             & 66.93$^\ddagger$    \\
+SCE              & 83.06             & 70.22               \\
+TPDD-CCE         & 82.10             & 72.32               \\
+TSCCE            & 82.26             & 70.82               \\
+FCL              & \textbf{83.61}    & \textbf{72.57}      \\
+ForwardT         & ---               & ---                 \\
+SDIV (ours, default) & 82.60         & 66.88$^\ddagger$    \\
+SDIV (ours, optimal) & \underline{84.11}\rlap{$^\S$} & 73.32\rlap{$^\S$} \\
+\midrule
+\multicolumn{3}{l}{\footnotesize $^\S$Optimal: $(\beta,\lambda){=}(0.05,\,-0.40)$ for PathMNIST;
+  $(\beta,\lambda){=}(0.10,\,-0.40)$ for DermaMNIST.} \\
+\bottomrule
+\end{tabular}
+\end{table}
