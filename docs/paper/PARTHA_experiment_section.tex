@@ -272,8 +272,8 @@ $\eta \in \{0,10,20,30,40\}\%$ (seed~42, $\beta{=}0.05$, $\lambda{=}{-0.80}$).
 AUNRC = area under noise-robustness curve (trapezoidal, $[0,0.4]$; higher is
 better). \textbf{Bold}: best per column; \underline{underlined}: second best.}
 \label{tab:noise_mnist}
-\small
-\resizebox{\linewidth}{!}{%
+\footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrrrrrc@{}}
 \toprule
 \textbf{Loss} & $\eta{=}0$ & $\eta{=}10$ & $\eta{=}20$ & $\eta{=}30$ & $\eta{=}40$ & \textbf{AUNRC} \\
@@ -287,8 +287,7 @@ SDIV (ours)     & 98.12            & \textbf{97.99}     & \textbf{98.04}     & \
   $\Delta$ from $\eta{=}0$ to $\eta{=}40$: CCE $-3.6$~pp, GCE $-1.2$~pp,
   TPDD-CCE $-3.5$~pp, SDIV $-1.5$~pp.}\\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -300,9 +299,8 @@ SDIV (ours)     & 98.12            & \textbf{97.99}     & \textbf{98.04}     & \
 \textbf{Bold}: best; \underline{underlined}: second best.
 $^{\dagger}$ForwardT uses oracle $\mathbf{T}$; no $\eta{=}0$ result.}
 \label{tab:noise_medical}
-\small
-\setlength{\tabcolsep}{4pt}
-\resizebox{\linewidth}{!}{%
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lrrrrrc@{}}
 \toprule
 \textbf{Loss} & $\eta{=}0$ & $\eta{=}10$ & $\eta{=}20$ & $\eta{=}30$ & $\eta{=}40$ & \textbf{AUNRC} \\
@@ -318,8 +316,7 @@ FCL               & \textbf{83.61}     & \textbf{83.19}     & \textbf{82.26}    
 ForwardT$^{\dagger}$ & ---             & 83.64              & 82.44              & 81.11              & 81.69              & --- \\
 SDIV (ours)       & \underline{82.60}  & \underline{82.72}  & 81.85              & 81.04              & \underline{81.98}  & 0.3279 \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
