@@ -172,7 +172,6 @@ SDIV at default $(\beta,\lambda){=}(0.05,\,-0.80)$.
 \textbf{Bold}: best; \underline{underlined}: second best.}
 \label{tab:clean_mnist_cifar}
 \small
-\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{MNIST} & \textbf{CIFAR-10} \\
@@ -188,8 +187,7 @@ FCL             & \textbf{98.46}     & 59.06              \\
 RKLD            & 97.98              & 55.97              \\
 SDIV (ours)     & 98.01              & 55.06              \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -203,7 +201,6 @@ $^{\ddagger}$Values at 66.88\% equal the DermaMNIST majority-class prevalence
 and indicate a degenerate constant-class predictor (see Section~\ref{sec:clean}).}
 \label{tab:clean_medical}
 \small
-\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -224,8 +221,7 @@ SDIV (ours, tuned)   & \underline{84.11}$^{\S}$   & 73.32$^{\S}$          \\
   $^{\S}$Tuned: $(\beta,\lambda){=}(0.05,\,-0.40)$ for PathMNIST;
   $(\beta,\lambda){=}(0.10,\,-0.40)$ for DermaMNIST.}\\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -497,7 +493,6 @@ $^{\dagger}$Majority-class collapse (66.88\% = class prevalence).
 \label{tab:sdiv_surface}
 \small
 \setlength{\tabcolsep}{5pt}
-\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}cc rr@{}}
 \toprule
 $\beta$ & $\lambda$ & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -524,8 +519,7 @@ $\beta$ & $\lambda$ & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
 0.50 & $+$0.00 & 82.63               & 71.12             \\
 0.50 & $+$0.20 & 82.60               & 71.47             \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -580,7 +574,6 @@ results are at or below the majority-class floor.
 }
 \label{tab:nlp}
 \small
-\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{Emotion} (6-cls) & \textbf{PubMedQA} (3-cls) \\
@@ -599,12 +592,10 @@ SDIV (ours)     & 57.80                    & 55.33              \\
   Source: \texttt{nlp\_Emotion\_results.csv} and \texttt{nlp\_PubMedQA\_results.csv}.
 }\\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 
 \vspace{8pt}
 
-\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Model} & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -622,8 +613,7 @@ rSDNet-ViT + SDIV (tuned)   & 82.6          & 73.3          \\
   Zero-shot from \texttt{summary\_grouped.csv}.
 }\\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 % ---------------------------------------------------------------------------
 
