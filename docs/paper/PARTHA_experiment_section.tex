@@ -71,6 +71,7 @@ hyper-parameters (lower). All vision experiments use the same ViT
 configuration; NLP experiments use \texttt{bert-base-uncased}.}
 \label{tab:datasets}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 \textbf{Dataset} & \textbf{Train} & \textbf{Test} & \textbf{Classes} & \textbf{Image size} \\
@@ -83,10 +84,12 @@ DermaMNIST          &  7{,}007 &  2{,}005 &  7 & $28\times28$ (RGB)  \\
 NLP:~Emotion        &  1{,}500 &  2{,}000 &  6 & text (max 128 tok)  \\
 NLP:~PubMedQA       &  1{,}500 &    500   &  3 & text (max 128 tok)  \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 
 \vspace{6pt}
 
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lr@{}}
 \toprule
 \textbf{ViT hyper-parameter} & \textbf{Value} \\
@@ -100,7 +103,8 @@ Optimiser                             & Adam ($\eta_0{=}10^{-3}$, $\beta_1{=}0.9
 Epochs / batch size                   & 30 / 256 \\
 SDIV default $(\beta,\lambda)$         & $(0.05,\,-0.80)$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -168,6 +172,7 @@ SDIV at default $(\beta,\lambda){=}(0.05,\,-0.80)$.
 \textbf{Bold}: best; \underline{underlined}: second best.}
 \label{tab:clean_mnist_cifar}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{MNIST} & \textbf{CIFAR-10} \\
@@ -183,7 +188,8 @@ FCL             & \textbf{98.46}     & 59.06              \\
 RKLD            & 97.98              & 55.97              \\
 SDIV (ours)     & 98.01              & 55.06              \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -197,6 +203,7 @@ $^{\ddagger}$Values at 66.88\% equal the DermaMNIST majority-class prevalence
 and indicate a degenerate constant-class predictor (see Section~\ref{sec:clean}).}
 \label{tab:clean_medical}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -217,7 +224,8 @@ SDIV (ours, tuned)   & \underline{84.11}$^{\S}$   & 73.32$^{\S}$          \\
   $^{\S}$Tuned: $(\beta,\lambda){=}(0.05,\,-0.40)$ for PathMNIST;
   $(\beta,\lambda){=}(0.10,\,-0.40)$ for DermaMNIST.}\\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -269,6 +277,7 @@ AUNRC = area under noise-robustness curve (trapezoidal, $[0,0.4]$; higher is
 better). \textbf{Bold}: best per column; \underline{underlined}: second best.}
 \label{tab:noise_mnist}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lrrrrrc@{}}
 \toprule
 \textbf{Loss} & $\eta{=}0$ & $\eta{=}10$ & $\eta{=}20$ & $\eta{=}30$ & $\eta{=}40$ & \textbf{AUNRC} \\
@@ -282,7 +291,8 @@ SDIV (ours)     & 98.12            & \textbf{97.99}     & \textbf{98.04}     & \
   $\Delta$ from $\eta{=}0$ to $\eta{=}40$: CCE $-3.6$~pp, GCE $-1.2$~pp,
   TPDD-CCE $-3.5$~pp, SDIV $-1.5$~pp.}\\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -296,6 +306,7 @@ $^{\dagger}$ForwardT uses oracle $\mathbf{T}$; no $\eta{=}0$ result.}
 \label{tab:noise_medical}
 \small
 \setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lrrrrrc@{}}
 \toprule
 \textbf{Loss} & $\eta{=}0$ & $\eta{=}10$ & $\eta{=}20$ & $\eta{=}30$ & $\eta{=}40$ & \textbf{AUNRC} \\
@@ -311,7 +322,8 @@ FCL               & \textbf{83.61}     & \textbf{83.19}     & \textbf{82.26}    
 ForwardT$^{\dagger}$ & ---             & 83.64              & 82.44              & 81.11              & 81.69              & --- \\
 SDIV (ours)       & \underline{82.60}  & \underline{82.72}  & 81.85              & 81.04              & \underline{81.98}  & 0.3279 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -485,6 +497,7 @@ $^{\dagger}$Majority-class collapse (66.88\% = class prevalence).
 \label{tab:sdiv_surface}
 \small
 \setlength{\tabcolsep}{5pt}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}cc rr@{}}
 \toprule
 $\beta$ & $\lambda$ & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -511,7 +524,8 @@ $\beta$ & $\lambda$ & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
 0.50 & $+$0.00 & 82.63               & 71.12             \\
 0.50 & $+$0.20 & 82.60               & 71.47             \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
@@ -566,6 +580,7 @@ results are at or below the majority-class floor.
 }
 \label{tab:nlp}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Loss} & \textbf{Emotion} (6-cls) & \textbf{PubMedQA} (3-cls) \\
@@ -584,10 +599,12 @@ SDIV (ours)     & 57.80                    & 55.33              \\
   Source: \texttt{nlp\_Emotion\_results.csv} and \texttt{nlp\_PubMedQA\_results.csv}.
 }\\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 
 \vspace{8pt}
 
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Model} & \textbf{PathMNIST} & \textbf{DermaMNIST} \\
@@ -605,7 +622,8 @@ rSDNet-ViT + SDIV (tuned)   & 82.6          & 73.3          \\
   Zero-shot from \texttt{summary\_grouped.csv}.
 }\\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 % ---------------------------------------------------------------------------
 
