@@ -97,7 +97,7 @@ FCL leads at 98.46\%, followed by SCE (98.30\%), TPDD-CCE (98.44\%),
 CCE (98.22\%), SDIV (98.01\%), RKLD (97.98\%), and GCE (97.99\%).
 TSCCE (91.75\%) is weaker, consistent with its restriction to $\lambda{=}0$
 which limits gradient diversity.
-The tight clustering of the top seven losses ($<0.5$~pp spread) reflects
+The tight clustering of the top seven losses (less than 0.5 percentage point spread) reflects
 MNIST's near-saturation regime: all well-specified losses converge to the
 Bayes-optimal classifier, as predicted by the consistency theorem
 (Theorem~1).
@@ -137,10 +137,10 @@ for $\eta \in \{0, 0.1, 0.2, 0.3, 0.4\}$.
 Test accuracy is evaluated on the clean test set throughout.
 
 \paragraph{MNIST.}
-Table~\ref{tab:noise_mnist} and Figure~\ref{fig:noise_pathmnist} (left panel)
+Table~\ref{tab:noise_mnist} and Figure~\ref{fig:noise_mnist}
 show that SDIV and GCE are the most noise-tolerant losses.
-At $\eta{=}0.4$, SDIV degrades only $\Delta{=}{-1.5}$~pp (from 98.12\% to
-96.62\%), while CCE degrades $\Delta{=}{-3.6}$~pp (from 98.25\% to 94.68\%).
+At $\eta{=}0.4$, SDIV degrades only 1.5 percentage points (from 98.12\% to
+96.62\%), while CCE degrades 3.6 percentage points (from 98.25\% to 94.68\%).
 GCE achieves the best average accuracy (mean over all noise rates: 97.59\%)
 compared to SDIV (97.58\%) and CCE (96.47\%).
 These differences, while numerically modest given the simplicity of MNIST,
@@ -152,8 +152,8 @@ Table~\ref{tab:noise_medical} and Figure~\ref{fig:noise_pathmnist} show that
 most robust losses maintain stable accuracy across noise rates.
 Between $\eta{=}0$ and $\eta{=}0.4$, the absolute accuracy change across
 losses is:
-SDIV $-0.62$~pp, CCE $+0.39$~pp,
-SCE $+0.21$~pp, FCL $-0.62$~pp, GCE $-0.61$~pp.
+SDIV $-0.62$ percentage points, CCE $+0.39$ percentage points,
+SCE $+0.21$ percentage points, FCL $-0.62$ percentage points, GCE $-0.61$ percentage points.
 The near-flat trajectories indicate that the PathMNIST task, being a strongly
 structured colon-pathology classification problem, is relatively resilient to
 the noise levels tested---a ceiling effect rather than demonstrating robust
@@ -186,7 +186,7 @@ $\varepsilon \in \{0, 1/255, 2/255, 4/255, 8/255\}$.
 Gradients are computed using the CCE loss uniformly (to prevent information
 leakage from the training loss into the attack),
 and the evaluation uses the full clean test set.
-Table~\ref{tab:fgsm} and Figures~\ref{fig:fgsm_dermamnist}--\ref{fig:fgsm_drop}
+Table~\ref{tab:fgsm} and Figures~\ref{fig:fgsm_pathmnist} and~\ref{fig:fgsm_dermamnist}
 summarise the results.
 
 \paragraph{MNIST.}
@@ -198,30 +198,30 @@ the worst-case retention across the four reported losses is 79.0\% (TDPDSCCE).
 \paragraph{PathMNIST.}
 Table~\ref{tab:fgsm} shows that PathMNIST is far more vulnerable than MNIST.
 At $\varepsilon{=}8/255$, all losses show catastrophic degradation:
-CCE drops from 83.31\% to 17.60\% ($\Delta{=}{-78.9}$~pp),
-SDIV from 80.93\% to 15.89\% ($\Delta{=}{-80.3}$~pp), and
-FCL from 76.88\% to 7.12\% ($\Delta{=}{-90.7}$~pp).
+CCE drops from 83.31\% to 17.60\% (a fall of 65.7 percentage points),
+SDIV from 80.93\% to 15.89\% (a fall of 65.0 percentage points), and
+FCL from 76.88\% to 7.12\% (a fall of 69.8 percentage points).
 Even MAE, which starts from a weak baseline (35.07\%), drops to 22.23\%.
 \textbf{No loss function provides genuine adversarial resistance on PathMNIST
 under FGSM.}
 This highlights that robust training losses alone, without adversarial
-training~\citep{madry2018}, do not confer FGSM robustness on this dataset.
+training~\citep{madry2018pgd}, do not confer FGSM robustness on this dataset.
 
 \paragraph{DermaMNIST.}
 A striking pattern emerges on DermaMNIST.
 SDIV, MAE, and GCE maintain constant accuracy across all $\varepsilon$ values
-($\Delta{=}0.00$~pp), while CCE collapses from 72.27\% to 22.69\%
-($\Delta{=}{-68.5}$~pp).
+(zero accuracy change), while CCE collapses from 72.27\% to 22.69\%
+(a fall of 49.6 percentage points).
 This superficial ``perfect FGSM robustness'' is, however, an artefact of the
 majority-class collapse documented in Section~\ref{sec:clean}:
 a classifier that always predicts label~4 (the majority nv class) produces
 identical predictions on any input, perturbed or not.
 The correct interpretation is that these losses are \emph{unresponsive} to
 the input, not adversarially robust.
-Among genuinely discriminative losses on DermaMNIST, TSCCE (clean 67.18\%
-$\to$ $\varepsilon{=}8/255$: 46.63\%, $\Delta{=}{-30.7}$~pp) and
-SCE (71.22\% $\to$ 54.11\%, $\Delta{=}{-24.4}$~pp) show appreciable
-resilience relative to CCE ($\Delta{=}{-68.5}$~pp).
+Among genuinely discriminative losses on DermaMNIST, TSCCE drops from
+67.18\% to 46.63\% at $\varepsilon{=}8/255$ (a fall of 20.6 percentage points) and
+SCE drops from 71.22\% to 54.11\% (a fall of 17.1 percentage points),
+both substantially better than CCE which falls by 49.6 percentage points.
 
 % ---------------------------------------------------------------------------
 \subsection{Category D: rSDNet Parameter Sensitivity}
@@ -234,7 +234,7 @@ evaluated at $\beta{=}0.20$),
 subject to the validity constraint $B \equiv \beta - \lambda(1{-}\beta) > 0$.
 A fresh model is trained at each valid grid point for 50 epochs (seed~42);
 test accuracy is used to construct the response surface shown in
-Figures~\ref{fig:sdiv_surface} and~\ref{fig:sdiv_heatmap}.
+Figure~\ref{fig:sdiv_grid} (heatmaps for PathMNIST and DermaMNIST).
 
 Table~\ref{tab:sdiv_surface} summarises the peak configurations.
 On PathMNIST, accuracy peaks at
@@ -265,10 +265,14 @@ a practical deployment step, rather than relying on default values.
 \subsection{NLP Experiments: BERT under Label Noise}
 \label{sec:nlp}
 
-BERT is fine-tuned for text classification on two datasets:
-Emotion (6 classes; 1{,}500 training samples)
-and PubMedQA (3 classes; 1{,}500 training samples).
-Three epochs of fine-tuning are used; results are in Table~\ref{tab:nlp}.
+BERT is fine-tuned for text classification on two datasets.
+The \textbf{Emotion} dataset~\citep{saravia2018} (\texttt{dair-ai/emotion} on
+Hugging Face; 6 emotion classes: sadness, joy, love, anger, fear, surprise)
+provides 16{,}000 training samples, of which 1{,}500 are used here.
+The \textbf{PubMedQA} dataset~\citep{jin2019pubmedqa} (\texttt{qiaojin/PubMedQA},
+config \texttt{pqa\_labeled}; 3 classes: yes/no/maybe) provides 1{,}000 labelled
+training questions; 1{,}500 samples are used (with repetition).
+Results are in Table~\ref{tab:nlp} and Figure~\ref{fig:nlp_bert}.
 
 On the Emotion dataset, GCE (58.20\%) is the strongest loss, followed by
 TruncGCE (58.10\%), SDIV (57.80\%), and CCE (57.25\%).
@@ -276,8 +280,8 @@ On PubMedQA, TruncGCE achieves the highest accuracy (58.00\%), with
 CCE (56.00\%) and TSCCE (56.00\%) close behind.
 SDIV (55.33\%) is at the lower end on PubMedQA.
 
-The absolute differences across losses are small ($\leq 1.0$~pp on Emotion,
-$\leq 2.7$~pp on PubMedQA).
+The absolute differences across losses are small (at most 1.0 percentage point on Emotion,
+at most 2.7 percentage points on PubMedQA).
 Given the very limited training set size (1{,}500 samples) and the brevity
 of fine-tuning (3 epochs), these gaps are within the range of sampling
 variance.
@@ -319,8 +323,9 @@ the research proposal.
         Future runs should use $\geq 3$ seeds to establish statistical reliability.
 
   \item \textbf{FGSM only; no PGD, CW, or DeepFool.}
-        The proposal specifies evaluation under PGD~\citep{madry2018},
-        Carlini-Wagner (CW)~\citep{carlini2017}, and DeepFool~\citep{moosavi2016}
+        The proposal specifies evaluation under Projected Gradient
+        Descent (PGD)~\citep{madry2018pgd}, Carlini-Wagner
+        (CW)~\citep{carlini2017cw}, and DeepFool~\citep{moosavi2016deepfool}
         attacks, none of which are included here.
         FGSM is a single-step attack and is generally considered a weak
         adversarial evaluation.
@@ -362,7 +367,7 @@ the research proposal.
 \subsection{Summary}
 \label{sec:exp_summary}
 
-Table~\ref{tab:summary} collects key accuracy figures across datasets and
+Table~\ref{tab:summary} and Figure~\ref{fig:master_summary} collect key accuracy figures across datasets and
 evaluation categories.
 The main empirical findings are:
 \begin{itemize}[leftmargin=*,itemsep=2pt]
