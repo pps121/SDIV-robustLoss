@@ -1,4 +1,4 @@
-# Robust Neural Classification via S-Divergence (rSDNet)
+# Robust Neural Classification via S-Divergence
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.6+](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c.svg)](https://pytorch.org/)
@@ -11,7 +11,7 @@ Official implementation and publication figures for:
 
 ## 🌟 Key Highlights & Theoretical Contributions
 
-Standard cross-entropy loss ($\text{CCE}$) suffers under label noise, class imbalance, and adversarial attacks. This work introduces **rSDNet** — trained with the **S-Divergence ($\text{SDIV}$)** loss superfamily — and proves:
+Standard cross-entropy loss ($\text{CCE}$) suffers under label noise, class imbalance, and adversarial attacks. This work claims **S-Divergence ($\text{SDIV}$)** as a robust loss function under different categories across vision and NLP benchmarks:
 
 > 📜 **Theorem 1 (Bayes-Optimal Consistency)**: Empirical S-divergence minimisers converge to the population-optimal equivalence class $\Theta_0 = \{\theta : g_\theta(x) = p_0(x)\}$ **without requiring unique minimisers**. No strict identifiability assumptions are needed.
 
