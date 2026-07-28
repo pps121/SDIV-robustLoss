@@ -39,19 +39,19 @@ Under parameter tuning ($\lambda = -0.40, \beta \in [0.05, 0.10]$) with extended
 
 | Benchmark Dataset | Task Domain | CCE (Baseline) | Runner-Up Baseline | SDIV (Tuned $\lambda=-0.40$) | SDIV Rank |
 |---|---|---|---|---|---|
-| **MNIST** | 10-class clean | $98.22\%$ | FCL ($98.46\%$) | **98.48%** | 🥇 **#1 Top Rank** |
-| **MNIST (40% Noise)** | 10-class noise | $94.68\%$ | GCE ($96.99\%$) | **97.85%** | 🥇 **#1 Top Rank** |
-| **CIFAR-10** | 10-class clean | $60.56\%$ | TPDD-CCE ($61.16\%$) | **61.85%** | 🥇 **#1 Top Rank** |
-| **PathMNIST** | 9-class pathology clean | $83.02\%$ | FCL ($83.61\%$) | **84.11%** | 🥇 **#1 Top Rank** |
-| **PathMNIST (40% Noise)** | 9-class noise | $82.41\%$ | FCL ($82.99\%$) | **83.85%** | 🥇 **#1 Top Rank** |
-| **DermaMNIST** | 7-class dermatology clean | $73.22\%$ | CCE ($73.22\%$) | **73.32%** | 🥇 **#1 Top Rank** |
-| **DermaMNIST (40% Noise)**| 7-class noise | $67.28\%$ | TSCCE ($70.02\%$) | **71.85%** | 🥇 **#1 Top Rank** |
-| **PathMNIST AUNRC** | Noise robustness area | $0.3269$ | FCL ($0.3321$) | **0.3345** | 🥇 **#1 Top Rank** |
-| **DermaMNIST AUNRC** | Noise robustness area | $0.2798$ | FCL ($0.2829$) | **0.2914** | 🥇 **#1 Top Rank** |
-| **PathMNIST FGSM ($\varepsilon=8/255$)** | Adversarial attack | $17.60\%$ | TSCCE ($21.16\%$) | **24.50%** | 🥇 **#1 Top Rank** |
-| **DermaMNIST FGSM ($\varepsilon=8/255$)**| Adversarial attack | $22.69\%$ | SCE ($54.11\%$) | **56.20%** | 🥇 **#1 Top Rank** |
-| **Emotion NLP** | 6-class BERT fine-tuning | $57.25\%$ | GCE ($58.20\%$) | **58.50%** | 🥇 **#1 Top Rank** |
-| **PubMedQA NLP** | 3-class BERT fine-tuning | $56.00\%$ | TruncGCE ($58.00\%$) | **58.67%** | 🥇 **#1 Top Rank** |
+| **MNIST** | 10-class clean | $98.22\%$ | FCL ($98.46\%$) | **98.48%** |
+| **MNIST (40% Noise)** | 10-class noise | $94.68\%$ | GCE ($96.99\%$) | **97.85%** |
+| **CIFAR-10** | 10-class clean | $60.56\%$ | TPDD-CCE ($61.16\%$) | **61.85%** 
+| **PathMNIST** | 9-class pathology clean | $83.02\%$ | FCL ($83.61\%$) | **84.11%** |
+| **PathMNIST (40% Noise)** | 9-class noise | $82.41\%$ | FCL ($82.99\%$) | **83.85%** |
+| **DermaMNIST** | 7-class dermatology clean | $73.22\%$ | CCE ($73.22\%$) | **73.32%** |
+| **DermaMNIST (40% Noise)**| 7-class noise | $67.28\%$ | TSCCE ($70.02\%$) | **71.85%** |
+| **PathMNIST AUNRC** | Noise robustness area | $0.3269$ | FCL ($0.3321$) | **0.3345** |
+| **DermaMNIST AUNRC** | Noise robustness area | $0.2798$ | FCL ($0.2829$) | **0.2914** |
+| **PathMNIST FGSM ($\varepsilon=8/255$)** | Adversarial attack | $17.60\%$ | TSCCE ($21.16\%$) | **24.50%** |
+| **DermaMNIST FGSM ($\varepsilon=8/255$)**| Adversarial attack | $22.69\%$ | SCE ($54.11\%$) | **56.20%** |
+| **Emotion NLP** | 6-class BERT fine-tuning | $57.25\%$ | GCE ($58.20\%$) | **58.50%** |
+| **PubMedQA NLP** | 3-class BERT fine-tuning | $56.00\%$ | TruncGCE ($58.00\%$) | **58.67%** |
 
 ---
 
@@ -155,40 +155,6 @@ Under parameter tuning ($\lambda = -0.40, \beta \in [0.05, 0.10]$) with extended
   <img src="./results/paper/figures/F10_master_summary.png" width="100%" alt="Master summary 4-panel figure">
 </p>
 
----
-
-## 📁 Repository Directory Structure
-
-```
-.
-├── code/
-│   └── figures/                      # Complete Figure Generators & PyTorch Modules
-│       ├── figure1_clean_accuracy.py # Figure 1 generator
-│       ├── figure2_noise_mnist.py    # Figure 2 generator
-│       ├── figure3_noise_pathmnist.py# Figure 3 generator
-│       ├── figure4_noise_dermamnist.py# Figure 4 generator
-│       ├── figure5_aunrc_ranking.py  # Figure 5 generator
-│       ├── figure6_fgsm_pathmnist.py # Figure 6 generator
-│       ├── figure7_fgsm_dermamnist.py# Figure 7 generator
-│       ├── figure8_sdiv_surface.py   # Figure 8 generator
-│       ├── figure9_nlp_bert.py       # Figure 9 generator
-│       ├── figure10_master_summary.py# Figure 10 generator
-│       ├── generate_publication_final.py # Publication figure suite
-│       ├── run_all_figures.py        # 1-Click execution script for all figures
-│       ├── robust_losses.py          # PyTorch SDIV & baseline loss implementations
-│       └── vision_transformer.py     # rSDNet-ViT architecture definition
-│
-├── results/
-│   └── paper/
-│       ├── csvs/                     # Raw ground-truth CSV empirical measurements
-│       │   ├── pathmnist_noise_results.csv
-│       │   ├── dermamnist_noise_results.csv
-│       │   ├── pathmnist_sdiv_surface.csv
-│       │   ├── dermamnist_sdiv_surface.csv
-│       │   └── ...
-│       ├── figures/                  # Publication-grade PNG figures (no legend overlap)
-│       └── tables/                   # LaTeX tables (tab_*.tex)
-```
 
 ---
 
@@ -226,8 +192,7 @@ If you find this work or codebase useful in your research, please cite:
 ```bibtex
 @article{sdiv_robust_classification_2026,
   title={No Unique Minimizer, No Problem: On the Consistency of Robust Neural Classifiers},
-  author={P. S. et al.},
-  journal={arXiv preprint arXiv:2603.17628},
+  author={anonymous},
   year={2026}
 }
 ```
