@@ -1,7 +1,0 @@
-dataset,loss,best_test_acc,seed,noise_type,noise_rate
-MedMCQA,CCE,0.85,42,Clean,0
-MedMCQA,GCE(q=0.7),0.85,42,Clean,0
-MedQA-USMLE,CCE,0.85,42,Clean,0
-MedQA-USMLE,GCE(q=0.7),0.85,42,Clean,0
-PubMedQA,CCE,0.85,42,Clean,0
-PubMedQA,GCE(q=0.7),0.85,42,Clean,0
