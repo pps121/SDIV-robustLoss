@@ -18,7 +18,7 @@ __pycache__/
 results_12April2026.zip
 
 # Sensitive / private
-[Dont_share]*
+Dont_share*
 
 # Jupyter checkpoints
 .ipynb_checkpoints/

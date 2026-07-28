@@ -1,0 +1,9 @@
+dataset,loss,beta,lam,noise_rate,accuracy
+mnist,SDIV,0.05,-0.8,0.0,0.9794
+mnist,CCE,0.05,-0.8,0.0,0.9819
+mnist,TDPDSCCE,0.05,-0.8,0.0,0.985
+mnist,TSCCE,0.05,-0.8,0.0,0.8623
+mnist,GCE,0.05,-0.8,0.0,0.9836
+mnist,SCE,0.05,-0.8,0.0,0.9818
+mnist,FCL,0.05,-0.8,0.0,0.098
+mnist,RKLD,0.05,-0.8,0.0,0.9743

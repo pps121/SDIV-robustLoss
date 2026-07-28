@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>robustNN-transformers — Interactive Demo Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root { --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --accent:#6366f1; --accent2:#22d3ee; --accent3:#f59e0b; --text:#e2e8f0; --muted:#64748b; --border:#1e293b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  .hero { position: relative; overflow: hidden; padding: 80px 60px 60px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #064e3b 70%, #0f172a 100%); border-bottom: 1px solid var(--border); text-align: center; }
+  .hero::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse 60% 40% at 50% 30%, #6366f133 0%, transparent 70%); pointer-events:none; }
+  .hero .badge { display: inline-block; background: #6366f122; border: 1px solid #6366f155; border-radius: 20px; padding: 6px 16px; font-size: 0.75rem; color: #a5b4fc; font-weight: 500; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; background: linear-gradient(135deg, #a5b4fc, #67e8f9, #86efac); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.15; margin-bottom: 20px; }
+  .hero p { font-size: 1.05rem; color: #94a3b8; max-width: 680px; margin: 0 auto 30px; line-height: 1.7; }
+  .hero-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .badge-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 500; text-decoration: none; transition: all 0.2s; border: 1px solid; }
+  .badge-link.arxiv { color: #fca5a5; border-color: #b91c1c44; background: #b91c1c11; }
+  .badge-link.arxiv:hover { background: #b91c1c22; }
+  .badge-link.gh { color: #a5b4fc; border-color: #6366f144; background: #6366f111; }
+  .badge-link.gh:hover { background: #6366f122; }
+  .badge-link.data { color: #6ee7b7; border-color: #05966944; background: #05966911; }
+  .badge-link.data:hover { background: #05966922; }
+
+  .section { padding: 60px; }
+  .section-title { font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; }
+  .section-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; }
+
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .demo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: all 0.3s; text-decoration: none; color: var(--text); display: block; }
+  .demo-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px #6366f120; }
+  .demo-card .thumb { height: 180px; display: flex; align-items: center; justify-content: center; font-size: 4rem; position: relative; overflow: hidden; }
+  .demo-card .thumb .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+  .card-body { padding: 20px 22px 24px; }
+  .card-body h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+  .card-body p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .card-tag { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; }
+
+  .eq-block { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 36px; margin: 0 0 40px; }
+  .eq-block h3 { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+  .eq-main { font-family: monospace; font-size: 1.05rem; color: #a5b4fc; background: #1e1b4b33; border-radius: 8px; padding: 16px 20px; border: 1px solid #3730a344; margin-bottom: 12px; line-height: 1.8; }
+  .eq-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .param-card { background: var(--surface2); border-radius: 8px; padding: 12px 16px; font-size: 0.8rem; line-height: 1.5; }
+  .param-card strong { color: #c7d2fe; font-family: monospace; }
+  .param-card span { color: var(--muted); }
+
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 0; }
+  .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .result-card .metric { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #a5b4fc, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .result-card .label { font-size: 0.75rem; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .result-card .context { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 60px; color: var(--muted); font-size: 0.8rem; line-height: 2; }
+  footer a { color: var(--accent2); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  @media (max-width: 768px) { .hero, .section, footer { padding-left: 24px; padding-right: 24px; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Research · ISI Kolkata · 2026</div>
+  <h1>Robust Neural Learning<br/>via S-Divergence</h1>
+  <p>Extending rSDNet from MLPs to <strong style="color:#a5b4fc">Vision Transformers</strong> and <strong style="color:#67e8f9">BERT-style language models</strong>. Provably robust training against label noise, adversarial attacks, and distribution shift — with interactive 3D visualizations.</p>
+  <div class="hero-links">
+    <a class="badge-link arxiv" href="https://arxiv.org/abs/2603.17628" target="_blank">📄 arXiv:2603.17628 (rSDNet)</a>
+    <a class="badge-link arxiv" href="https://arxiv.org/abs/2602.08933" target="_blank">📄 arXiv:2602.08933 (rRNet)</a>
+    <a class="badge-link gh" href="https://github.com/pps121/robustNN-transformers" target="_blank">⭐ GitHub Repo</a>
+    <a class="badge-link data" href="code/robust_losses.py">🧩 robust_losses.py</a>
+  </div>
+</div>
+
+<!-- INTERACTIVE DEMOS -->
+<div class="section">
+  <div class="section-title">🔬 Interactive 3D Visualizations</div>
+  <div class="section-sub">Explore the model, the loss landscape, and experimental results — all in your browser, no server required.</div>
+  <div class="demo-grid">
+    <a class="demo-card" href="vit_layer_explorer.html">
+      <div class="thumb" style="background: linear-gradient(135deg, #3b0764, #1e1b4b);">
+        <div class="overlay">🧠</div>
+      </div>
+      <div class="card-body">
+        <h3>ViT Layer-by-Layer Explorer</h3>
+        <p>Watch 64 patch token embeddings transform from spatial layout to semantic clusters across 6 Transformer blocks. Animate, rotate, and color by class or norm.</p>
+        <span class="card-tag" style="background:#3b076422; color:#d8b4fe; border:1px solid #7e22ce44">3D Scatter · Layer Slider · Animation</span>
+      </div>
+    </a>
+    <a class="demo-card" href="sdiv_loss_surface.html">
+      <div class="thumb" style="background: linear-gradient(135deg, #1e1b4b, #0c4a6e);">
+        <div class="overlay">📐</div>
+      </div>
+      <div class="card-body">
+        <h3>S-Divergence (β, λ) Accuracy Surface</h3>
+        <p>3D surface over the full (β, λ) parameter grid — every point is a real experimental result. Rotate, hover for exact values. Switch PathMNIST ↔ DermaMNIST.</p>
+        <span class="card-tag" style="background:#0c4a6e22; color:#67e8f9; border:1px solid #0e7490">3D Surface · Real Data · Switchable</span>
+      </div>
+    </a>
+    <a class="demo-card" href="robustness_dashboard.html">
+      <div class="thumb" style="background: linear-gradient(135deg, #064e3b, #0f172a);">
+        <div class="overlay">📊</div>
+      </div>
+      <div class="card-body">
+        <h3>Robustness Benchmark Dashboard</h3>
+        <p>All 10 loss functions compared side-by-side on label noise (η=0–40%) and FGSM adversarial robustness (ε=0–8/255). Toggle losses, hover for exact values.</p>
+        <span class="card-tag" style="background:#064e3b22; color:#6ee7b7; border:1px solid #05966944">Interactive Lines · Radar · Bar Charts</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- S-DIVERGENCE FORMULA -->
+<div class="section">
+  <div class="section-title">⚗️ The S-Divergence Loss</div>
+  <div class="section-sub">A 2-parameter family that generalises both KL divergence (Cross-Entropy) and β-divergence (DPD). The robustness mechanism is elegant: each sample's gradient is automatically weighted by the model's own confidence.</div>
+  <div class="eq-block">
+    <h3>Per-sample loss (classification, K classes)</h3>
+    <div class="eq-main">
+      ℓ_{β,λ}(y, p) = (1/A) · Σₖ pₖ^{β+1}  −  (1+β)/(A·B) · pᵧ^B<br/>
+      <br/>
+      where:  A = 1 + λ(1−β)  &gt; 0,    B = β − λ(1−β)  &gt; 0
+    </div>
+    <div class="eq-params">
+      <div class="param-card"><strong>β=0, λ=−1</strong> → <span>reduces exactly to Cross-Entropy (CCE)</span></div>
+      <div class="param-card"><strong>λ=0</strong> → <span>reduces to Density Power Divergence (DPD / β-divergence)</span></div>
+      <div class="param-card"><strong>β=0.05, λ=−0.8</strong> → <span>paper default. Robust sweet spot.</span></div>
+      <div class="param-card"><strong>Gradient ∝ pᵧ^β</strong> → <span>mislabeled samples auto-downweighted. No outlier detection needed.</span></div>
+    </div>
+  </div>
+
+  <!-- Key results -->
+  <div class="results-grid">
+    <div class="result-card"><div class="metric">83.6%</div><div class="label">FCL on PathMNIST</div><div class="context">best clean accuracy (η=0%)</div></div>
+    <div class="result-card"><div class="metric">0 pp</div><div class="label">SDIV accuracy drop</div><div class="context">ε=0 → ε=8/255 on DermaMNIST</div></div>
+    <div class="result-card"><div class="metric">−49 pp</div><div class="label">MAE collapse</div><div class="context">PathMNIST, η=10% (78%→48%)</div></div>
+    <div class="result-card"><div class="metric">10</div><div class="label">Loss functions benchmarked</div><div class="context">CCE, MAE, GCE, SDIV, FCL, …</div></div>
+    <div class="result-card"><div class="metric">5</div><div class="label">Noise levels</div><div class="context">η ∈ {0%, 10%, 20%, 30%, 40%}</div></div>
+    <div class="result-card"><div class="metric">~4M</div><div class="label">ViT parameters</div><div class="context">d=256, 6 layers, 8 heads, patch=4</div></div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- ARCHITECTURE -->
+<div class="section">
+  <div class="section-title">🏗️ Repository Structure</div>
+  <div class="section-sub">All code is modular and framework-agnostic (PyTorch). The robust losses module is a drop-in replacement for <code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:0.85em">nn.CrossEntropyLoss</code>.</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="font-size:1.5rem;margin-bottom:10px">🧩</div>
+      <div style="font-weight:600;margin-bottom:6px">Core Library</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.7">robust_losses.py — 10 loss functions<br/>vision_transformer.py — from-scratch ViT<br/>All as <code>nn.Module</code></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="font-size:1.5rem;margin-bottom:10px">🔬</div>
+      <div style="font-weight:600;margin-bottom:6px">Experiments (Parts 2–4)</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.7">Part 2: ViT on PathMNIST/DermaMNIST<br/>Part 3: BERT on clinical NLP<br/>Part 4: CLIP/MedSigLIP zero-shot</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="font-size:1.5rem;margin-bottom:10px">📊</div>
+      <div style="font-weight:600;margin-bottom:6px">Results (74 plots)</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.7">Training curves · Confusion matrices<br/>Robustness plots · 3D surfaces<br/>All seeds, all noise rates</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="font-size:1.5rem;margin-bottom:10px">🌐</div>
+      <div style="font-weight:600;margin-bottom:6px">Interactive Demos</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.7">3 Plotly HTML files (no server)<br/>ViT explorer · Loss surface · Dashboard<br/>Open in any browser</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>Authors:</strong> Partha Pratim Saha (extension work, Parts 2–4) · Suryasis Jana &amp; Dr. Abhik Ghosh (ISI Kolkata, foundational rSDNet/rRNet papers)<br/>
+  <strong>Papers:</strong> <a href="https://arxiv.org/abs/2603.17628">rSDNet (arXiv:2603.17628)</a> · <a href="https://arxiv.org/abs/2602.08933">rRNet (arXiv:2602.08933)</a> · <a href="https://doi.org/10.3150/15-BEJ765">S-divergence theory (Bernoulli 2017)</a><br/>
+  <strong>License:</strong> MIT · <strong>Framework:</strong> PyTorch ≥2.6 · Python 3.10+
+</footer>
+</body>
+</html>

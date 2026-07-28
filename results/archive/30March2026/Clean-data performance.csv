@@ -1,0 +1,9 @@
+dataset,loss,beta,lam,noise_rate,accuracy
+cifar10,SDIV,0.05,-0.8,0.0,0.5506
+cifar10,CCE,0.05,-0.8,0.0,0.6056
+cifar10,TDPDSCCE,0.05,-0.8,0.0,0.6116
+cifar10,TSCCE,0.05,-0.8,0.0,0.5294
+cifar10,GCE,0.05,-0.8,0.0,0.5652
+cifar10,SCE,0.05,-0.8,0.0,0.5905
+cifar10,FCL,0.05,-0.8,0.0,0.5906
+cifar10,RKLD,0.05,-0.8,0.0,0.5597

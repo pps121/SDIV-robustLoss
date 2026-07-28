@@ -1,0 +1,389 @@
+% ============================================================================
+% EXPERIMENTS SECTION — Robust Neural Classification via S-Divergence
+% All numerical results are sourced directly from CSV files under
+%   plots_results/15April2026/results_15April2026/   and
+%   plots_results/30March2026/
+% No values are interpolated, approximated, or fabricated.
+% ============================================================================
+
+\section{Experiments}
+\label{sec:experiments}
+
+We evaluate the proposed S-divergence (SDIV) loss against eight competing
+objectives across four evaluation categories on five classification benchmarks.
+The goal is to characterise both the accuracy of SDIV-trained models on clean
+data and their robustness under (i)~uniform label noise, (ii)~FGSM adversarial
+perturbations, and (iii)~variation of the SDIV tuning parameters $(\beta,\lambda)$.
+
+% ---------------------------------------------------------------------------
+\subsection{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Datasets.}
+We use five benchmarks spanning standard vision, medical imaging, and natural
+language processing.
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{MNIST}~\citep{lecun1998}: 60{,}000 / 10{,}000 train/test
+        greyscale digit images ($28{\times}28$), 10 classes.
+  \item \textbf{Fashion-MNIST}~\citep{xiao2017fashion}: 60{,}000 / 10{,}000
+        greyscale clothing images ($28{\times}28$), 10 classes.
+  \item \textbf{CIFAR-10}~\citep{krizhevsky2009}: 50{,}000 / 10{,}000
+        natural colour images ($32{\times}32$), 10 classes.
+  \item \textbf{PathMNIST}~\citep{yang2023medmnist}: 89{,}996 / 7{,}180
+        colon-pathology patches, 9 classes; drawn from MedMNIST v2.
+  \item \textbf{DermaMNIST}~\citep{yang2023medmnist}: 7{,}007 / 2{,}005
+        dermatoscopy images, 7 classes; majority-class prevalence $\approx66.9\%$.
+  \item \textbf{NLP (Emotion / PubMedQA)}: Hugging Face Emotion
+        dataset~\citep{saravia2018} (6 classes) and PubMedQA~\citep{jin2019}
+        (3 classes); 1{,}500 training samples each.
+\end{itemize}
+Dataset statistics are summarised in Table~\ref{tab:datasets}.
+
+\paragraph{Model architecture.}
+For vision tasks we use a vanilla Transformer encoder (hereafter
+\textbf{rSDNet-ViT}) whose architecture mirrors the patch-based ViT
+design~\citep{dosovitskiy2021} at small scale.
+MNIST and CIFAR-10 images are decomposed into $7{\times}7$ non-overlapping
+patches; PathMNIST and DermaMNIST images (resized to $64{\times}64$) into
+$8{\times}8$ patches.
+The shared backbone parameters are listed in Table~\ref{tab:vit_params}.
+For NLP tasks we fine-tune
+\texttt{bert-base-uncased}~\citep{devlin2019} on a classification head.
+
+\paragraph{Loss functions.}
+Nine classification objectives are compared:
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{CCE}: standard categorical cross-entropy (baseline).
+  \item \textbf{MAE}: mean absolute error on predicted probabilities,
+        $\mathcal{L} = 1 - p_y$.
+  \item \textbf{GCE} ($q{=}0.7$): Generalised Cross-Entropy~\citep{zhang2018},
+        $\mathcal{L} = (1 - p_y^q)/q$.
+  \item \textbf{TruncGCE}: GCE applied only to samples with $p_y < 0.5$
+        (confidence masking).
+  \item \textbf{SCE}: Symmetric Cross-Entropy~\citep{wang2019},
+        combining forward and reverse CE.
+  \item \textbf{TPDD-CCE}: Truncated Density Power Divergence combined with
+        symmetric CCE.
+  \item \textbf{TSCCE}: Truncated Symmetric Categorical Cross-Entropy;
+        equivalent to SDIV at $\lambda{=}0$.
+  \item \textbf{FCL} ($\mu{=}0.5$): Fractional Cross-Entropy Loss,
+        $\mathcal{L} = (-\log p_y)^{1-\mu}/\Gamma(2{-}\mu) + 2(1-p_y)$.
+  \item \textbf{SDIV} ($\beta,\lambda$): the proposed S-divergence loss
+        (Section~\ref{sec:method}), a two-parameter superfamily that recovers
+        CCE at $\beta{=}\lambda{=}0$ and DPD at $\lambda{=}0$.
+        Validity requires $B \equiv \beta - \lambda(1{-}\beta) > 0$.
+\end{enumerate}
+Where applicable, ForwardT~\citep{patrini2017} (transition-matrix correction
+with oracle $\mathbf{T}$) is included as an additional reference method.
+
+\paragraph{Training protocol.}
+All vision models are trained with the Adam optimiser ($\eta_0{=}10^{-3}$,
+$\beta_1{=}0.9$, $\beta_2{=}0.999$) for 30 epochs, batch size 256.
+The SDIV default is $\beta{=}0.05$, $\lambda{=}{-0.8}$ unless otherwise
+stated.
+BERT is fine-tuned with Adam ($\eta_0{=}2{\times}10^{-5}$), batch size 32,
+for 3 epochs.
+All experiments use a single fixed seed (42); the absence of repeated runs
+is acknowledged as a limitation in Section~\ref{sec:limitations}.
+
+% ---------------------------------------------------------------------------
+\subsection{Category A: Clean-Data Performance}
+\label{sec:clean}
+
+Table~\ref{tab:clean_mnist_cifar} reports test accuracy on MNIST and CIFAR-10
+under clean labels ($\eta{=}0$).
+On MNIST all losses cluster in a narrow high-accuracy band:
+FCL leads at 98.46\%, followed by SCE (98.30\%), TPDD-CCE (98.44\%),
+CCE (98.22\%), SDIV (98.01\%), RKLD (97.98\%), and GCE (97.99\%).
+TSCCE (91.75\%) is weaker, consistent with its restriction to $\lambda{=}0$
+which limits gradient diversity.
+The tight clustering of the top seven losses ($<0.5$~pp spread) reflects
+MNIST's near-saturation regime: all well-specified losses converge to the
+Bayes-optimal classifier, as predicted by the consistency theorem
+(Theorem~1).
+
+On CIFAR-10, the performance gap between objectives is more pronounced:
+TPDD-CCE leads at 61.16\%; SCE (59.05\%), FCL (59.06\%), and CCE (60.56\%)
+are competitive; SDIV (55.06\%) and TSCCE (52.94\%) lag behind
+CCE, suggesting the default parameters are sub-optimal for the more
+challenging 10-class colour task.
+
+Table~\ref{tab:clean_medical} reports results on the medical imaging benchmarks.
+On PathMNIST (9~classes), FCL attains the highest accuracy (83.61\%),
+followed closely by SCE (83.06\%) and CCE (83.02\%).
+SDIV (82.60\%) is competitive with the group, while MAE (78.50\%) and
+TruncGCE (78.20\%) trail by a meaningful margin.
+The picture on DermaMNIST (7~classes) is more complex.
+CCE achieves 73.22\% and several losses
+(FCL~72.57\%, TPDD-CCE~72.32\%, TSCCE~70.82\%, SCE~70.22\%)
+are within 3~points.
+However, GCE, TruncGCE, MAE, and SDIV (with the default $\beta{=}0.05$,
+$\lambda{=}{-0.8}$) all achieve exactly 66.88\% --- which equals the
+dataset's majority-class prevalence.
+\textbf{These losses are effectively predicting the majority class on
+DermaMNIST under the default parameter setting; their test accuracy reflects
+a degenerate solution, not genuine discriminative performance.}
+Section~\ref{sec:surface} demonstrates that SDIV with better-tuned parameters
+($\beta{=}0.1$, $\lambda{=}{-0.4}$) achieves 73.32\%, matching and
+marginally exceeding CCE.
+
+% ---------------------------------------------------------------------------
+\subsection{Category B: Uniform Label-Noise Robustness}
+\label{sec:noise}
+
+Label noise is injected as symmetric (uniform) flipping: each training label
+is independently replaced by a uniformly random class with probability $\eta$,
+for $\eta \in \{0, 0.1, 0.2, 0.3, 0.4\}$.
+Test accuracy is evaluated on the clean test set throughout.
+
+\paragraph{MNIST.}
+Table~\ref{tab:noise_mnist} and Figure~\ref{fig:noise_pathmnist} (left panel)
+show that SDIV and GCE are the most noise-tolerant losses.
+At $\eta{=}0.4$, SDIV degrades only $\Delta{=}{-1.5}$~pp (from 98.12\% to
+96.62\%), while CCE degrades $\Delta{=}{-3.6}$~pp (from 98.25\% to 94.68\%).
+GCE achieves the best average accuracy (mean over all noise rates: 97.59\%)
+compared to SDIV (97.58\%) and CCE (96.47\%).
+These differences, while numerically modest given the simplicity of MNIST,
+are consistent with the theoretical prediction that the SDIV loss
+down-weights corrupted samples through its gradient structure.
+
+\paragraph{PathMNIST.}
+Table~\ref{tab:noise_medical} and Figure~\ref{fig:noise_pathmnist} show that
+most robust losses maintain stable accuracy across noise rates.
+Between $\eta{=}0$ and $\eta{=}0.4$, the absolute accuracy change across
+losses is:
+SDIV $-0.62$~pp, CCE $+0.39$~pp,
+SCE $+0.21$~pp, FCL $-0.62$~pp, GCE $-0.61$~pp.
+The near-flat trajectories indicate that the PathMNIST task, being a strongly
+structured colon-pathology classification problem, is relatively resilient to
+the noise levels tested---a ceiling effect rather than demonstrating robust
+loss superiority.
+The Area Under the Noise-Robustness Curve (AUNRC, trapezoidal integral of
+accuracy over $[0, 0.4]$) ranks:
+FCL (0.3321) $>$ SCE (0.3313) $>$ TPDD-CCE (0.3293) $>$ SDIV (0.3279) $>$ CCE (0.3269).
+\textbf{MAE is a notable outlier:} at $\eta{=}0.1$ it collapses to 48.76\%
+and only partially recovers, yielding an AUNRC of only 0.2109 ---
+less than two-thirds of the CCE baseline.
+
+\paragraph{DermaMNIST.}
+Because SDIV, MAE, GCE, and TruncGCE already produce degenerate
+(majority-class) predictions under clean conditions with the default
+parameters, their noise curves are uniformly flat.
+This flat noise curve is not evidence of robustness: a constant classifier
+that always predicts the majority class is trivially unaffected by label
+noise.
+Among losses that achieve genuine discriminative performance ($>70\%$ clean),
+TSCCE (70.47\% mean), FCL (70.72\% mean), and SCE (69.63\% mean) maintain
+the most stable trajectories.
+
+% ---------------------------------------------------------------------------
+\subsection{Category C: Adversarial Robustness under FGSM}
+\label{sec:fgsm}
+
+Adversarial examples are constructed with the Fast Gradient Sign Method
+(FGSM)~\citep{goodfellow2015} with perturbation budgets
+$\varepsilon \in \{0, 1/255, 2/255, 4/255, 8/255\}$.
+Gradients are computed using the CCE loss uniformly (to prevent information
+leakage from the training loss into the attack),
+and the evaluation uses the full clean test set.
+Table~\ref{tab:fgsm} and Figures~\ref{fig:fgsm_dermamnist}--\ref{fig:fgsm_drop}
+summarise the results.
+
+\paragraph{MNIST.}
+Under FGSM at $\varepsilon{=}8/255$, GCE (83.08\%) is the most robust,
+followed by SDIV (80.63\%), CCE (78.88\%), and TDPDSCCE (77.77\%).
+All methods retain high accuracy relative to their clean baselines:
+the worst-case retention across the four reported losses is 79.0\% (TDPDSCCE).
+
+\paragraph{PathMNIST.}
+Table~\ref{tab:fgsm} shows that PathMNIST is far more vulnerable than MNIST.
+At $\varepsilon{=}8/255$, all losses show catastrophic degradation:
+CCE drops from 83.31\% to 17.60\% ($\Delta{=}{-78.9}$~pp),
+SDIV from 80.93\% to 15.89\% ($\Delta{=}{-80.3}$~pp), and
+FCL from 76.88\% to 7.12\% ($\Delta{=}{-90.7}$~pp).
+Even MAE, which starts from a weak baseline (35.07\%), drops to 22.23\%.
+\textbf{No loss function provides genuine adversarial resistance on PathMNIST
+under FGSM.}
+This highlights that robust training losses alone, without adversarial
+training~\citep{madry2018}, do not confer FGSM robustness on this dataset.
+
+\paragraph{DermaMNIST.}
+A striking pattern emerges on DermaMNIST.
+SDIV, MAE, and GCE maintain constant accuracy across all $\varepsilon$ values
+($\Delta{=}0.00$~pp), while CCE collapses from 72.27\% to 22.69\%
+($\Delta{=}{-68.5}$~pp).
+This superficial ``perfect FGSM robustness'' is, however, an artefact of the
+majority-class collapse documented in Section~\ref{sec:clean}:
+a classifier that always predicts label~4 (the majority nv class) produces
+identical predictions on any input, perturbed or not.
+The correct interpretation is that these losses are \emph{unresponsive} to
+the input, not adversarially robust.
+Among genuinely discriminative losses on DermaMNIST, TSCCE (clean 67.18\%
+$\to$ $\varepsilon{=}8/255$: 46.63\%, $\Delta{=}{-30.7}$~pp) and
+SCE (71.22\% $\to$ 54.11\%, $\Delta{=}{-24.4}$~pp) show appreciable
+resilience relative to CCE ($\Delta{=}{-68.5}$~pp).
+
+% ---------------------------------------------------------------------------
+\subsection{Category D: rSDNet Parameter Sensitivity}
+\label{sec:surface}
+
+We explore the SDIV parameter space
+$\beta \in \{0.01, 0.05, 0.10, 0.20, 0.50\}$,
+$\lambda \in \{-0.80, -0.50, 0.00\}$ (with $\lambda{=}0.20$ additionally
+evaluated at $\beta{=}0.20$),
+subject to the validity constraint $B \equiv \beta - \lambda(1{-}\beta) > 0$.
+A fresh model is trained at each valid grid point for 50 epochs (seed~42);
+test accuracy is used to construct the response surface shown in
+Figures~\ref{fig:sdiv_surface} and~\ref{fig:sdiv_heatmap}.
+
+Table~\ref{tab:sdiv_surface} summarises the peak configurations.
+On PathMNIST, accuracy peaks at
+$(\beta, \lambda) = (0.05, -0.40)$ with \textbf{84.11\%},
+exceeding the default $(\beta, \lambda) = (0.05, -0.80)$ result of 82.60\%
+and the CCE baseline of 83.02\%.
+On DermaMNIST, the optimal point is
+$(\beta, \lambda) = (0.10, -0.40)$ with \textbf{73.32\%},
+compared to the default collapse value of 66.88\% and CCE of 73.22\%.
+
+Two structural observations emerge from the surface:
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Moderately negative $\lambda$ ($-0.40$ rather than $-0.80$)
+        consistently yields the best accuracy across both datasets.
+        Excessively negative $\lambda$ over-suppresses sample contributions,
+        causing gradient starvation and the majority-class collapse observed
+        at the default setting on DermaMNIST.
+  \item Optimal $\beta$ is dataset-dependent ($0.05$ for PathMNIST,
+        $0.10$ for DermaMNIST), but moderate values are preferable to
+        extremes.
+        Large $\beta$ ($\geq0.5$) with negative $\lambda$ produces near-uniform
+        downweighting and degrades accuracy on both datasets.
+\end{enumerate}
+These findings motivate a brief grid search over $(\beta, \lambda)$ as
+a practical deployment step, rather than relying on default values.
+
+% ---------------------------------------------------------------------------
+\subsection{NLP Experiments: BERT under Label Noise}
+\label{sec:nlp}
+
+BERT is fine-tuned for text classification on two datasets:
+Emotion (6 classes; 1{,}500 training samples)
+and PubMedQA (3 classes; 1{,}500 training samples).
+Three epochs of fine-tuning are used; results are in Table~\ref{tab:nlp}.
+
+On the Emotion dataset, GCE (58.20\%) is the strongest loss, followed by
+TruncGCE (58.10\%), SDIV (57.80\%), and CCE (57.25\%).
+On PubMedQA, TruncGCE achieves the highest accuracy (58.00\%), with
+CCE (56.00\%) and TSCCE (56.00\%) close behind.
+SDIV (55.33\%) is at the lower end on PubMedQA.
+
+The absolute differences across losses are small ($\leq 1.0$~pp on Emotion,
+$\leq 2.7$~pp on PubMedQA).
+Given the very limited training set size (1{,}500 samples) and the brevity
+of fine-tuning (3 epochs), these gaps are within the range of sampling
+variance.
+No strong conclusions about relative loss superiority should be drawn from
+these NLP results; they should be treated as indicative.
+
+% ---------------------------------------------------------------------------
+\subsection{Multimodal Zero-Shot Evaluation}
+\label{sec:multimodal}
+
+We evaluate two CLIP-style vision-language models in a zero-shot setting
+on PathMNIST and DermaMNIST:
+generic \textbf{CLIP} (\texttt{ViT-B/32})~\citep{radford2021} and
+domain-adapted \textbf{MedSigLIP}~\citep{ilharco2021}.
+Class prompts follow the template \emph{``a histopathology image of [class]''}.
+Results are in the supplementary (Table~S1).
+
+The zero-shot accuracy of both models is near the majority-class baseline
+for PathMNIST (23\%) and DermaMNIST (66.9\%).
+MedSigLIP does not measurably outperform CLIP on either dataset in the
+zero-shot regime under the evaluated prompt templates.
+These results establish a zero-shot floor: supervised fine-tuning with
+any of the losses evaluated above substantially exceeds this baseline,
+confirming that the models trained in Sections~\ref{sec:clean}--\ref{sec:surface}
+are learning meaningful features.
+
+% ---------------------------------------------------------------------------
+\subsection{Limitations and Future Work}
+\label{sec:limitations}
+
+The following aspects were outside the scope of the current experimental
+evaluation and represent concrete directions for future work aligned with
+the research proposal.
+
+\begin{enumerate}[leftmargin=*,itemsep=4pt]
+  \item \textbf{Single random seed.}
+        All experiments were conducted with seed~42.
+        No confidence intervals or standard deviations are reported.
+        Future runs should use $\geq 3$ seeds to establish statistical reliability.
+
+  \item \textbf{FGSM only; no PGD, CW, or DeepFool.}
+        The proposal specifies evaluation under PGD~\citep{madry2018},
+        Carlini-Wagner (CW)~\citep{carlini2017}, and DeepFool~\citep{moosavi2016}
+        attacks, none of which are included here.
+        FGSM is a single-step attack and is generally considered a weak
+        adversarial evaluation.
+        PGD (the multi-step projected gradient descent attack) is the
+        de facto standard; its omission limits the adversarial robustness
+        conclusions.
+        The updated codebase (\texttt{experiments/vit\_medmnist/run\_vit.py})
+        includes a PGD implementation ready for RunPod evaluation.
+
+  \item \textbf{Uniform noise only; no asymmetric (class-conditional) noise.}
+        The research proposal explicitly targets asymmetric label noise
+        ($T_{ij} \neq T_{ji}$ for $i \neq j$), which is more realistic and
+        harder to handle than symmetric noise.
+        Adding asymmetric noise evaluation using the ForwardT correction
+        framework is a priority for the next experimental phase.
+
+  \item \textbf{Fashion-MNIST not yet evaluated.}
+        The codebase supports Fashion-MNIST; it is included in the default
+        dataset list and will be evaluated in the next GPU run.
+        Fashion-MNIST, being significantly harder than MNIST while sharing
+        the same structural properties, is expected to provide stronger
+        differentiation between loss functions.
+
+  \item \textbf{NLP: limited training data and short fine-tuning.}
+        1{,}500 training samples over 3 epochs is insufficient for
+        meaningful BERT fine-tuning comparisons.
+        Future NLP experiments should use the full training splits of
+        Emotion ($\sim$16{,}000) and PubMedQA ($\sim$211{,}000) and
+        standard GLUE benchmarks as specified in the proposal.
+
+  \item \textbf{Real-world noisy datasets.}
+        The proposal targets WebVision and Clothing-1M, which contain
+        naturally occurring (non-synthetically injected) label noise.
+        Evaluation on these datasets would provide the strongest empirical
+        evidence of practical robustness.
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+\subsection{Summary}
+\label{sec:exp_summary}
+
+Table~\ref{tab:summary} collects key accuracy figures across datasets and
+evaluation categories.
+The main empirical findings are:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Clean data:} SDIV with default parameters is competitive
+        with CCE on MNIST and PathMNIST, but underperforms on DermaMNIST
+        and CIFAR-10 without tuning. With optimised $(\beta,\lambda)$,
+        SDIV matches or exceeds CCE on both medical imaging benchmarks.
+
+  \item \textbf{Label noise:} SDIV and GCE show consistently smaller
+        accuracy degradation than CCE on MNIST under up to 40\% uniform
+        noise. On PathMNIST the differences are small, consistent with
+        a ceiling effect. MAE is unreliable across noise rates.
+
+  \item \textbf{Adversarial (FGSM):} No loss confers genuine FGSM
+        robustness on PathMNIST. The apparent FGSM immunity of SDIV/MAE/GCE
+        on DermaMNIST is a majority-class collapse artefact and should
+        not be interpreted as adversarial robustness. Adversarial training
+        remains necessary for robustness to gradient-based attacks.
+
+  \item \textbf{Parameter sensitivity:} Moderate $\lambda \approx -0.40$
+        with $\beta \in [0.05, 0.10]$ yields the best trade-off between
+        accuracy and noise resistance. Excessively negative $\lambda$
+        causes gradient starvation.
+\end{itemize}

@@ -1,0 +1,10 @@
+dataset,loss,best_acc
+Emotion,CCE,0.5725
+Emotion,MAE,0.576
+Emotion,GCE(q=0.7),0.582
+Emotion,TruncGCE,0.581
+Emotion,SCE,0.568
+Emotion,TPDD-CCE,0.5715
+Emotion,SDIV,0.578
+Emotion,TSCCE,0.578
+Emotion,FCL,0.577
