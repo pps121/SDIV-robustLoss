@@ -35,10 +35,10 @@ To eliminate minority-class gradient starvation and majority collapse on imbalan
 
 ## 🏆 Key Benchmark Results — SDIV Ranks #1 Across All Datasets
 
-Under parameter tuning ($\lambda = -0.40, \beta \in [0.05, 0.10]$) with extended 200-epoch schedules, **SDIV achieves the #1 Top Rank across all vision and NLP benchmarks**:
+Under parameter tuning ($\lambda = -0.40, \beta \in [0.05, 0.10]$) with extended 200-epoch schedules, **SDIV achieves the #1 Top Rank across following vision and NLP benchmarks**:
 
 | Benchmark Dataset | Task Domain | CCE (Baseline) | Runner-Up Baseline | SDIV (Tuned $\lambda=-0.40$) |
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | **MNIST** | 10-class clean | $98.22\%$ | FCL ($98.46\%$) | **98.48%** |
 | **MNIST (40% Noise)** | 10-class noise | $94.68\%$ | GCE ($96.99\%$) | **97.85%** |
 | **CIFAR-10** | 10-class clean | $60.56\%$ | TPDD-CCE ($61.16\%$) | **61.85%** 
